@@ -1,0 +1,3 @@
+*Rating* is a simple application developed as a way to demonstrate how to build an IMS LTI tool provider using the [ceLTIc LTI class library](https://github.com/celtic-project/LTI-PHP). The application allows teachers to create items which can be rated by students. A separate list of items is maintained for each link from which the tool is launched. If the link has the Outcomes service enabled, then the associated gradebook column will be populated with the proportion of the visible items which each student has rated.
+
+The wiki area of this repository contains [documentation](https://github.com/celtic-project/Rating-PHP/wiki) for installing and using this application.
