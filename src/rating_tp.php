@@ -20,6 +20,8 @@ class RatingToolProvider extends LTI\ToolProvider
     {
         parent::__construct($data_connector);
 
+        $this->allowSharing = true;
+
         $this->baseUrl = getAppUrl();
 
         $this->vendor = new Profile\Item('ims', 'IMSGlobal', 'IMS Global Learning Consortium Inc', 'https://www.imsglobal.org/');

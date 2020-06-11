@@ -13,6 +13,6 @@
     "docs": "http://www.spvsoftwareproducts.com/php/rating/"
   },
   "require": {
-    "celtic/lti": "^3.0.0"
+    "celtic/lti": "^3.2.1"
   }
 }

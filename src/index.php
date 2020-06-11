@@ -2,6 +2,7 @@
 
 use ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector;
+use ceLTIc\LTI\ResourceLink;
 
 /**
  * This page displays a list of items for a resource link.  Students are able to rate
@@ -166,14 +167,15 @@ $page = <<< EOD
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<meta http-equiv="content-language" content="EN" />
-<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-<title>{$title}</title>
-<link href="css/rateit.css" media="screen" rel="stylesheet" type="text/css" />
-<script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
-<script src="js/jquery.rateit.min.js" type="text/javascript"></script>
-<link href="css/rating.css" media="screen" rel="stylesheet" type="text/css" />
-<script type="text/javascript">
+  <meta http-equiv="content-language" content="EN" />
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <title>{$title}</title>
+  <link href="css/rateit.css" media="screen" rel="stylesheet" type="text/css" />
+  <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
+  <script src="js/jquery.rateit.min.js" type="text/javascript"></script>
+  <script src="js/rating.js" type="text/javascript"></script>
+  <link href="css/rating.css" media="screen" rel="stylesheet" type="text/css" />
+  <script type="text/javascript">
 //<![CDATA[
 function doContentItem(todo) {
   var el = document.getElementById('id_do');
@@ -216,7 +218,7 @@ function doOnLoad() {
 
 window.onload=doOnLoad;
 //]]>
-</script>
+  </script>
 </head>
 
 <body>
@@ -250,8 +252,8 @@ if ($ok) {
 EOD;
     } else {
         $page .= <<< EOD
-<table class="items" border="0" cellpadding="3">
-<tbody>
+  <table class="items" border="0" cellpadding="3">
+  <tbody>
 
 EOD;
         $row = 0;
@@ -277,7 +279,7 @@ EOD;
                 if (!$item->visible) {
                     $title .= ' [hidden]';
                 }
-                if (isset($item->item_text)) {
+                if (!empty($item->item_text)) {
                     $text = "<br />\n{$item->item_text}";
                 } else {
                     $text = '';
@@ -291,15 +293,15 @@ EOD;
                     $value = floatToStr($item->tot_ratings / $item->num_ratings);
                 }
                 $page .= <<< EOD
-  <tr class="{$trclass}">
-    <td><span class="title">{$title}</span>{$text}</td>
-    <td><div data-id="{$item->item_pk}" title="{$value}" class="rateit" data-rateit-min="0" data-rateit-max="{$item->max_rating}" data-rateit-step="{$step}" data-rateit-value="{$value}" data-rateit-readonly="{$readonly}" data-rateit-mode="font"></div></td>
+    <tr class="{$trclass}">
+      <td><span class="title">{$title}</span>{$text}</td>
+      <td><div data-id="{$item->item_pk}" title="{$value}" class="rateit" data-rateit-min="0" data-rateit-max="{$item->max_rating}" data-rateit-step="{$step}" data-rateit-value="{$value}" data-rateit-readonly="{$readonly}" data-rateit-mode="font"></div></td>
 
 EOD;
                 if (!$_SESSION['isStudent']) {
                     $page .= <<< EOD
-    <td class="aligncentre">
-      <select name="seq{$item->item_pk}" onchange="location.href='./?do=reorder&amp;id={$item->item_pk}&amp;seq='+this.value;" class="alignright">
+      <td class="aligncentre">
+        <select name="seq{$item->item_pk}" onchange="location.href='./?do=reorder&amp;id={$item->item_pk}&amp;seq='+this.value;" class="alignright">
 
 EOD;
                     for ($i = 1; $i <= count($items); $i++) {
@@ -309,35 +311,35 @@ EOD;
                             $sel = '';
                         }
                         $page .= <<< EOD
-        <option value="{$i}"{$sel}>{$i}</option>
+          <option value="{$i}"{$sel}>{$i}</option>
 
 EOD;
                     }
                     $page .= <<< EOD
-      </select>
-    </td>
-    <td class="iconcolumn aligncentre">
-      <a href="./?id={$item->item_pk}"><img src="images/edit.png" title="Edit item" alt="Edit item" /></a>&nbsp;<a href="./?do=delete&amp;id={$item->item_pk}" onclick="return confirm('Delete item; are you sure?');"><img src="images/delete.png" title="Delete item" alt="Delete item" /></a>
-    </td>
+        </select>
+      </td>
+      <td class="iconcolumn aligncentre">
+        <a href="./?id={$item->item_pk}"><img src="images/edit.png" title="Edit item" alt="Edit item" /></a>&nbsp;<a href="./?do=delete&amp;id={$item->item_pk}" onclick="return confirm('Delete item; are you sure?');"><img src="images/delete.png" title="Delete item" alt="Delete item" /></a>
+      </td>
 
 EOD;
                 }
                 $page .= <<< EOD
-  </tr>
+    </tr>
 
 EOD;
             }
         }
         $page .= <<< EOD
-</tbody>
-</table>
+  </tbody>
+  </table>
 
 EOD;
     }
 }
 
 // Display form for adding/editing an item
-if ($ok && !$_SESSION['isStudent']) {
+if ($ok && !$_SESSION['isStudent'] && ($_SESSION['resource_pk'] === $_SESSION['user_resource_pk'])) {
     if (isset($update_item->item_pk)) {
         $mode = 'Update';
     } else {
@@ -352,15 +354,35 @@ if ($ok && !$_SESSION['isStudent']) {
         $checked = '';
     }
     $page .= <<< EOD
-<h2>{$mode} item</h2>
 
-<form action="./" method="post">
-<div class="box">
-  <span class="label">Title:<span class="required" title="required">*</span></span>&nbsp;<input name="title" type="text" size="50" maxlength="200" value="{$title}" /><br />
-  <span class="label">URL:</span>&nbsp;<input name="url" type="text" size="75" maxlength="200" value="{$url}" /><br />
-  <span class="label">Description:</span>&nbsp;<textarea name="text" rows="3" cols="60">{$text}</textarea><br />
-  <span class="label">Visible?</span>&nbsp;<input name="visible" type="checkbox" value="1"{$checked} /><br />
-  <span class="label">Maximum rating:<span class="required" title="required">*</span></span>&nbsp;<select name="max_rating">
+  <h2>{$mode} item</h2>
+
+  <form action="./" method="get">
+    <div class="sharebox">
+      <strong>New share key</strong><br /><br />
+      Life:&nbsp;<select id="life">
+        <option value="1">1 hour</option>
+        <option value="2">2 hours</option>
+        <option value="12">12 hours</option>
+        <option value="24">1 day</option>
+        <option value="48">2 days</option>
+        <option value="72" selected="selected">3 days</option>
+        <option value="96">4 days</option>
+        <option value="120">5 days</option>
+        <option value="168">1 week</option>
+      </select><br />
+      Auto approve?&nbsp;<input type="checkbox" id="auto_approve" value="yes" /><br /><br />
+      <input type="button" value="Generate" onclick="return doGenerateKey();" />
+    </div>
+  </form>
+
+  <form action="./" method="post">
+    <div class="box">
+      <span class="label">Title:<span class="required" title="required">*</span></span>&nbsp;<input name="title" type="text" size="50" maxlength="200" value="{$title}" /><br />
+      <span class="label">URL:</span>&nbsp;<input name="url" type="text" size="75" maxlength="200" value="{$url}" /><br />
+      <span class="label">Description:</span>&nbsp;<textarea name="text" rows="3" cols="60">{$text}</textarea><br />
+      <span class="label">Visible?</span>&nbsp;<input name="visible" type="checkbox" value="1"{$checked} /><br />
+      <span class="label">Maximum rating:<span class="required" title="required">*</span></span>&nbsp;<select name="max_rating">
 
 EOD;
     for ($i = 3; $i <= 10; $i++) {
@@ -370,7 +392,7 @@ EOD;
             $sel = '';
         }
         $page .= <<< EOD
-    <option value="{$i}"{$sel}>{$i}</option>
+        <option value="{$i}"{$sel}>{$i}</option>
 
 EOD;
     }
@@ -387,27 +409,27 @@ EOD;
         $sel4 = ' selected="selected"';
     }
     $page .= <<< EOD
-  </select><br />
-  <span class="label">Rating step:<span class="required" title="required">*</span></span>&nbsp;<select name="step">
-    <option value="4"{$sel4}>0.25</option>
-    <option value="2"{$sel2}>0.5</option>
-    <option value="1"{$sel1}>1</option>
-  </select><br />
-  <br />
-  <input type="hidden" name="do" id="id_do" value="add" />
-  <input type="hidden" name="id" value="{$id}" />
-  <span class="label"><span class="required" title="required">*</span>&nbsp;=&nbsp;required field</span>&nbsp;<input type="submit" value="{$mode} item" />
+      </select><br />
+      <span class="label">Rating step:<span class="required" title="required">*</span></span>&nbsp;<select name="step">
+        <option value="4"{$sel4}>0.25</option>
+        <option value="2"{$sel2}>0.5</option>
+        <option value="1"{$sel1}>1</option>
+      </select><br />
+      <br />
+      <input type="hidden" name="do" id="id_do" value="add" />
+      <input type="hidden" name="id" value="{$id}" />
+      <span class="label"><span class="required" title="required">*</span>&nbsp;=&nbsp;required field</span>&nbsp;<input type="submit" value="{$mode} item" />
 
 EOD;
 
     if (isset($update_item->item_pk)) {
         $page .= <<< EOD
-  &nbsp;<input type="reset" value="Cancel" onclick="location.href='./';" />
+      &nbsp;<input type="reset" value="Cancel" onclick="location.href='./';" />
 
 EOD;
     }
     $page .= <<< EOD
-</div>
+    </div>
 
 EOD;
     if ($_SESSION['isContentItem'] && !isset($update_item->item_pk)) {
@@ -416,18 +438,70 @@ EOD;
             $disabled = ' disabled="disabled"';
         }
         $page .= <<< EOD
-  <p class="clear">
-    <br />
-    <input type="submit" value="Cancel content" onclick="return doContentItem('cancelci');" />
-    <input type="submit" value="Create content item" onclick="return doContentItem('saveci');"{$disabled} />
-  </p>
+      <p class="clear">
+        <br />
+        <input type="submit" value="Cancel content" onclick="return doContentItem('cancelci');" />
+        <input type="submit" value="Create content item" onclick="return doContentItem('saveci');"{$disabled} />
+      </p>
 
 EOD;
     }
     $page .= <<< EOD
-</form>
+  </form>
 
 EOD;
+
+    $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+    $resource_link = ResourceLink::fromRecordId($_SESSION['resource_pk'], $data_connector);
+    $shares = $resource_link->getShares();
+    if (count($shares) > 0) {
+        $page .= <<< EOD
+
+  <h2 class="clear">Shares</h2>
+
+  <table class="shares" border="0" cellpadding="3">
+  <thead>
+    <tr>
+      <th>Source</th>
+      <th>Title</th>
+      <th>Approved</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+
+EOD;
+        $i = 0;
+        foreach ($shares as $share) {
+            $i++;
+            if ($share->approved) {
+                $shareApproved = 'tick';
+                $shareApproved_alt = 'Approved';
+                $action = 'Suspend';
+            } else {
+                $shareApproved = 'cross';
+                $shareApproved_alt = 'Not approved';
+                $action = 'Approve';
+            }
+            $page .= <<< EOD
+  <tr>
+    <td>{$share->consumerName}</td>
+    <td>{$share->title}</td>
+    <td class="aligncentre"><img id="img{$i}" src="images/{$shareApproved}.gif" alt="{$shareApproved_alt}" title="{$shareApproved_alt}" /></td>
+    <td class="aligncentre">
+      <input type="button" id="btn{$i}" value="{$action}" onclick="return doApprove({$i}, '{$action}', {$share->resourceLinkId});" />
+      <a href="share.php?do=cancel&rlid={$share->resourceLinkId}"><input type="button" value="Cancel" onclick="return confirm('Cancel share; are you sure?');" /></a>
+    </td>
+  </tr>
+
+EOD;
+        }
+        $page .= <<< EOD
+  </tbody>
+  </table>
+
+EOD;
+    }
 }
 
 // Page footer

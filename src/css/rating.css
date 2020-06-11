@@ -1,6 +1,12 @@
-table.items {
+table.items, table.shares {
   border: 1;
   margin: 10px;
+}
+table.shares {
+  border-collapse: collapse;
+}
+table.shares tr th, table.shares td {
+  border: 1px solid #000;
 }
 tr.notvisible {
   background-color: #c0c0c0;
@@ -25,7 +31,7 @@ span.title a {
 }
 span.label {
   display: inline-block;
-  width: 8em;
+  width: 11em;
   vertical-align: top;
 }
 .box {
@@ -34,6 +40,14 @@ span.label {
   padding: 1em;
   margin-left: 10px;
   background-color: #ffffc0;
+}
+.sharebox {
+  float: right;
+  border: 2px dotted #000;
+  padding: 1em;
+  margin-right: 10px;
+  background-color: #ffffc0;
+  text-align: center;
 }
 h1 {
   font-size: 120%;
@@ -44,6 +58,7 @@ h2 {
   color: #00f;
   margin: 0;
   margin-left: 10px;
+  padding-top: 10px;
 }
 img {
   border: 0;
@@ -56,4 +71,5 @@ img {
 }
 .clear {
   clear: both;
+  padding-top: 10px;
 }

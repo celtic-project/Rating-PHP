@@ -2,6 +2,7 @@
 
 use ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector;
+use ceLTIc\LTI\Util;
 
 /**
  * This page provides general functions to support the application.
@@ -12,6 +13,7 @@ use ceLTIc\LTI\DataConnector;
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 require_once('db.php');
+require_once('rating_tp.php');
 
 ###  Uncomment the next line to log error messages
 //  error_reporting(E_ALL);
@@ -30,6 +32,9 @@ function init(&$db, $checkSession = NULL)
 
 // Set session cookie path
     ini_set('session.cookie_path', getAppPath());
+
+// Set the logging level
+    Util::$logLevel = Util::LOGLEVEL_ERROR;
 
 // Open session
     session_name(SESSION_NAME);
@@ -386,7 +391,6 @@ EOD;
 function updateGradebook($db, $user_resource_pk = NULL, $user_user_pk = NULL)
 {
     $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-    $consumer = LTI\ToolConsumer::fromRecordId($_SESSION['consumer_pk'], $data_connector);
     $resource_link = LTI\ResourceLink::fromRecordId($_SESSION['resource_pk'], $data_connector);
 
     $num = getVisibleItemsCount($db, $_SESSION['resource_pk']);
