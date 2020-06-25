@@ -3,13 +3,14 @@
 use ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector;
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\ApiHook\ApiHook;
 
 /**
  * This page provides general functions to support the application.
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   3.0.0
+ * @version   3.2.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 require_once('db.php');
@@ -17,6 +18,11 @@ require_once('rating_tp.php');
 
 ###  Uncomment the next line to log error messages
 //  error_reporting(E_ALL);
+
+LTI\ResourceLink::registerApiHook(ApiHook::$MEMBERSHIPS_SERVICE_HOOK, 'moodle', 'ceLTIc\LTI\ApiHook\moodle\MoodleApiResourceLink');
+LTI\ToolProvider::registerApiHook(ApiHook::$USER_ID_HOOK, 'canvas', 'ceLTIc\LTI\ApiHook\canvas\CanvasApiToolProvider');
+LTI\ResourceLink::registerApiHook(ApiHook::$MEMBERSHIPS_SERVICE_HOOK, 'canvas', 'ceLTIc\LTI\ApiHook\canvas\CanvasApiResourceLink');
+
 ###
 ###  Initialise application session and database connection
 ###
@@ -221,8 +227,13 @@ EOD;
     $query->bindValue('sequence', $item->sequence, PDO::PARAM_INT);
     $query->bindValue('updated', $item->updated->format('Y-m-d H:i:s'), PDO::PARAM_STR);
     $query->bindValue('resource_pk', $resource_pk, PDO::PARAM_INT);
+    $ok = $query->execute();
 
-    return $query->execute();
+    if ($ok && !isset($item->item_pk)) {
+        $item->item_pk = intval($db->lastInsertId());
+    }
+
+    return $ok;
 }
 
 ###
@@ -388,7 +399,7 @@ EOD;
 ###  Update the gradebook with proportion of visible items which have been rated by each user
 ###
 
-function updateGradebook($db, $user_resource_pk = NULL, $user_user_pk = NULL)
+function updateGradebook($db, $user_resource_pk = NULL, $user_user_pk = NULL, $item = NULL, $rating = NULL)
 {
     $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
     $resource_link = LTI\ResourceLink::fromRecordId($_SESSION['resource_pk'], $data_connector);
@@ -411,6 +422,19 @@ function updateGradebook($db, $user_resource_pk = NULL, $user_user_pk = NULL)
             } else {
                 $lti_outcome = new LTI\Outcome();
                 $resource_link->doOutcomesService(LTI\ResourceLink::EXT_DELETE, $lti_outcome, $user);
+            }
+        }
+    }
+    if (!empty($user_resource_pk) && !empty($user_user_pk) && !empty($item) && !empty($rating)) {
+        if ($user_resource_pk !== $_SESSION['resource_pk']) {
+            $resource_link = LTI\ResourceLink::fromRecordId($user_resource_pk, $data_connector);
+        }
+        if ($resource_link->hasLineItemService()) {
+            $line_items = $resource_link->getLineItems(strval($item->item_pk));
+            if (!empty($line_items)) {
+                $user = LTI\UserResult::fromRecordId($user_user_pk, $data_connector);
+                $outcome = new LTI\Outcome($rating, $item->max_rating);
+                $line_items[0]->submitOutcome($outcome, $user);
             }
         }
     }

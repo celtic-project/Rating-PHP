@@ -15,7 +15,7 @@ use ceLTIc\LTI\DataConnector;
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   3.0.0
+ * @version   3.2.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 require_once('../lib.php');
@@ -64,6 +64,23 @@ if ($ok) {
             $update_consumer->enableUntil = strtotime($date);
         }
         $update_consumer->protected = isset($_POST['protected']);
+        $settings = $update_consumer->getSettings();
+        foreach ($settings as $prop => $value) {
+            if (strpos($prop, 'custom_') !== 0) {
+                $update_consumer->setSetting($prop);
+            }
+        }
+        $properties = $_POST['properties'];
+        $properties = str_replace("\r\n", "\n", $properties);
+        $properties = explode("\n", $properties);
+        foreach ($properties as $property) {
+            if (strpos($property, '=') !== false) {
+                list($name, $value) = explode('=', $property, 2);
+                if ($name) {
+                    $update_consumer->setSetting($name, $value);
+                }
+            }
+        }
 // Ensure all required fields have been provided
         if ($update_consumer->save()) {
             $_SESSION['message'] = 'The consumer has been saved.';
@@ -276,6 +293,13 @@ EOD;
     } else {
         $protected = '';
     }
+    $properties = '';
+    $settings = $update_consumer->getSettings();
+    foreach ($settings as $prop => $value) {
+        if (strpos($prop, 'custom_') !== 0) {
+            $properties .= "{$prop}={$value}\n";
+        }
+    }
     $page .= <<< EOD
 <h2><a name="edit">{$mode} consumer</a></h2>
 
@@ -288,6 +312,7 @@ EOD;
   <span class="label">Enable from:</span>&nbsp;<input name="enable_from" type="text" size="50" maxlength="200" value="{$enable_from}" /><br />
   <span class="label">Enable until:</span>&nbsp;<input name="enable_until" type="text" size="50" maxlength="200" value="{$enable_until}" /><br />
   <span class="label">Protected?</span>&nbsp;<input name="protected" type="checkbox" value="1"{$protected} /><br />
+  <span class="label">Properties:</span>&nbsp;<textarea name="properties" rows="3" cols="65">{$properties}</textarea><br />
   <br />
   <input type="hidden" name="do" value="add" />
   <input type="hidden" name="id" value="{$id}" />

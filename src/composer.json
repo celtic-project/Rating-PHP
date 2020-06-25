@@ -1,6 +1,6 @@
 {
   "name": "celtic/rating",
-  "version": "3.0.0",
+  "version": "3.2.0",
   "type": "project",
   "license": "GPL-3.0-or-later",
   "authors": [
@@ -13,6 +13,6 @@
     "docs": "http://www.spvsoftwareproducts.com/php/rating/"
   },
   "require": {
-    "celtic/lti": "^3.2.1"
+    "celtic/lti": "^3.3.0"
   }
 }

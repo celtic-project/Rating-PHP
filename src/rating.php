@@ -4,7 +4,7 @@
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   3.0.0
+ * @version   3.2.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 require_once('lib.php');
@@ -21,7 +21,7 @@ if ($ok) {
     $ok = FALSE;
     $item = getItem($db, $_SESSION['resource_pk'], intval($_POST['id']));
     if (($item !== FALSE) && saveRating($db, $_SESSION['user_pk'], $_POST['id'], $_POST['value'])) {
-        updateGradebook($db, $_SESSION['user_resource_pk'], $_SESSION['user_pk']);
+        updateGradebook($db, $_SESSION['user_resource_pk'], $_SESSION['user_pk'], $item, $_POST['value']);
         $ok = TRUE;
     }
 }

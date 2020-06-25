@@ -1,11 +1,11 @@
-table.items, table.shares {
+table.items, table.shares, table.users {
   border: 1;
   margin: 10px;
 }
-table.shares {
+table.shares, table.users {
   border-collapse: collapse;
 }
-table.shares tr th, table.shares td {
+table.shares tr th, table.shares td, table.users tr th, table.users td {
   border: 1px solid #000;
 }
 tr.notvisible {

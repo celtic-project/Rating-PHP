@@ -8,7 +8,7 @@ use ceLTIc\LTI\Profile;
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   3.0.0
+ * @version   3.2.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 require_once('lib.php');

@@ -10,7 +10,7 @@ use ceLTIc\LTI\ResourceLink;
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   3.0.0
+ * @version   3.2.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 require_once('lib.php');
@@ -20,6 +20,8 @@ $db = NULL;
 $ok = init($db, TRUE);
 // Initialise parameters
 $id = 0;
+$user_list = false;
+
 if ($ok) {
     $action = '';
 // Check for item id and action parameters
@@ -56,6 +58,12 @@ if ($ok) {
                 $ok = saveItem($db, $_SESSION['resource_pk'], $update_item);
             }
             if ($ok) {
+                if ($resource_link->hasLineItemService()) {
+                    $line_item = new LTI\LineItem($consumer, "Rating: {$update_item->item_title}", $update_item->max_rating);
+                    $line_item->resourceId = strval($update_item->item_pk);
+                    $line_item->tag = 'Rating';
+                    $resource_link->createLineItem($line_item);
+                }
                 $_SESSION['message'] = 'The item has been saved.';
                 if (!$_SESSION['isContentItem'] && ($update_item->visible != $was_visible)) {
                     updateGradebook($db);
@@ -72,6 +80,14 @@ if ($ok) {
         $update_item = getItem($db, $_SESSION['resource_pk'], $id);
         $was_visible = $update_item->visible;
         if (deleteItem($db, $_SESSION['resource_pk'], $id)) {
+            $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+            $resource_link = LTI\ResourceLink::fromRecordId($_SESSION['resource_pk'], $data_connector);
+            if ($resource_link->hasLineItemService()) {
+                $line_items = $resource_link->getLineItems(strval($id));
+                if (!empty($line_items)) {
+                    $line_items[0]->delete();
+                }
+            }
             $_SESSION['message'] = 'The item has been deleted.';
             if (!$_SESSION['isContentItem'] && $was_visible) {
                 updateGradebook($db);
@@ -143,6 +159,8 @@ if ($ok) {
         }
         header('Location: ./');
         exit;
+    } else if (isset($_POST['userlist'])) {
+        $user_list = true;
     }
 
 // Initialise an empty item instance
@@ -502,6 +520,130 @@ EOD;
 
 EOD;
     }
+
+    $page .= <<< EOD
+  <div class="clear" style="margin-left: 10px;">
+
+EOD;
+    if ($resource_link->hasMembershipsService()) {
+        if ($user_list) {
+            $members = $resource_link->getMemberships(true);
+            $page .= <<< EOD
+    <form action="./" method="post">
+      <input type="submit" name="userlist" value="Refresh user list" />
+    </form>
+
+    <h2>Users</h2>
+
+    <table class="users" border="0" cellpadding="3">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Learner?</th>
+        <th>Ratings</th>
+      </tr>
+    </thead>
+    <tbody>
+
+EOD;
+            $users = array();
+            foreach ($members as $member) {
+                $users["{$member->lastname}, {$member->firstname}"] = $member;
+            }
+            ksort($users);
+            foreach ($users as $name => $user) {
+                if ($user->isLearner()) {
+                    $img = 'tick.gif';
+                    $ratings = count(getUserRated($db, $_SESSION['resource_pk'], $user->getRecordId()));
+                } else {
+                    $img = 'cross.gif';
+                    $ratings = 'NA';
+                }
+                $page .= <<< EOD
+       <tr>
+         <td>{$user->ltiUserId}</td>
+         <td>{$name}</td>
+         <td class="aligncentre"><img src="images/{$img}" /></td>
+         <td class="aligncentre">{$ratings}</td>
+       </tr>
+
+EOD;
+            }
+            $page .= <<< EOD
+    </tbody>
+    </table>
+
+EOD;
+            if (count($resource_link->groupSets) > 0) {
+                $page .= <<< EOD
+    <h2>Group sets</h2>
+
+    <table class="users" border="0" cellpadding="3">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Groups</th>
+      </tr>
+    </thead>
+    <tbody>
+
+EOD;
+                $group_sets = array();
+                foreach ($resource_link->groupSets as $group_set_id => $group_set) {
+                    $group_sets[$group_set['title']] = $group_set;
+                }
+                ksort($group_sets);
+                foreach ($group_sets as $title => $group_set) {
+                    $page .= <<< EOD
+      <tr>
+        <td>{$title}</td>
+        <td>
+
+EOD;
+                    foreach ($group_set['groups'] as $group_id) {
+                        $page .= <<< EOD
+           {$resource_link->groups[$group_id]['title']}<br />
+
+EOD;
+                    }
+                    $page .= <<< EOD
+        </td>
+      </tr>
+
+EOD;
+                }
+                $page .= <<< EOD
+    </tbody>
+    </table>
+
+EOD;
+            } else {
+                $page .= <<< EOD
+    <p>
+      Your course does not appear to offer the ability to access a list of groups, or there is none to be accessed.
+    </p>
+
+EOD;
+            }
+        } else {
+            $page .= <<< EOD
+    <form action="./" method="post">
+      Your course appears to offer the ability to access a list of users. <input type="submit" id="id_members" name="userlist" value="Show user list" />
+    </form>
+
+EOD;
+        }
+    } else {
+        $page .= <<< EOD
+    Your course does not appear to offer the ability to access a list of users.
+
+EOD;
+    }
+    $page .= <<< EOD
+  </div>
+
+EOD;
 }
 
 // Page footer
