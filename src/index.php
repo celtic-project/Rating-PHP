@@ -10,17 +10,17 @@ use ceLTIc\LTI\ResourceLink;
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   3.2.0
+ * @version   4.0.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 require_once('lib.php');
 
 // Initialise session and database
-$db = NULL;
-$ok = init($db, TRUE);
+$db = null;
+$ok = init($db, true);
 // Initialise parameters
 $id = 0;
-$user_list = false;
+$userList = false;
 
 if ($ok) {
     $action = '';
@@ -34,38 +34,38 @@ if ($ok) {
 
 // Process add/update item action
     if ($action == 'add') {
-        $update_item = getItem($db, $_SESSION['resource_pk'], $id);
-        $update_item->item_title = $_POST['title'];
-        $update_item->item_text = $_POST['text'];
-        $update_item->item_url = $_POST['url'];
-        $update_item->max_rating = intval($_POST['max_rating']);
-        $update_item->step = intval($_POST['step']);
-        $was_visible = $update_item->visible;
-        $update_item->visible = isset($_POST['visible']);
+        $updateItem = getItem($db, $_SESSION['resource_pk'], $id);
+        $updateItem->item_title = $_POST['title'];
+        $updateItem->item_text = $_POST['text'];
+        $updateItem->item_url = $_POST['url'];
+        $updateItem->max_rating = intval($_POST['max_rating']);
+        $updateItem->step = intval($_POST['step']);
+        $wasVisible = $updateItem->visible;
+        $updateItem->visible = isset($_POST['visible']);
 // Ensure all required fields have been provided
         if (isset($_POST['id']) && isset($_POST['title']) && !empty($_POST['title'])) {
-            $ok = TRUE;
-            $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-            $consumer = LTI\ToolConsumer::fromRecordId($_SESSION['consumer_pk'], $data_connector);
+            $ok = true;
+            $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+            $platform = LTI\Platform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
             if (is_null($_SESSION['resource_pk'])) {
-                $resource_link = LTI\ResourceLink::fromConsumer($consumer, $_SESSION['resource_id']);
-                $ok = $resource_link->save();
+                $resourceLink = LTI\ResourceLink::fromConsumer($platform, $_SESSION['resource_id']);
+                $ok = $resourceLink->save();
             } else {
-                $resource_link = LTI\ResourceLink::fromRecordId($_SESSION['resource_pk'], $data_connector);
+                $resourceLink = LTI\ResourceLink::fromRecordId($_SESSION['resource_pk'], $dataConnector);
             }
             if ($ok) {
-                $_SESSION['resource_pk'] = $resource_link->getRecordId();
-                $ok = saveItem($db, $_SESSION['resource_pk'], $update_item);
+                $_SESSION['resource_pk'] = $resourceLink->getRecordId();
+                $ok = saveItem($db, $_SESSION['resource_pk'], $updateItem);
             }
             if ($ok) {
-                if ($resource_link->hasLineItemService()) {
-                    $line_item = new LTI\LineItem($consumer, "Rating: {$update_item->item_title}", $update_item->max_rating);
-                    $line_item->resourceId = strval($update_item->item_pk);
-                    $line_item->tag = 'Rating';
-                    $resource_link->createLineItem($line_item);
+                if ($resourceLink->hasLineItemService()) {
+                    $lineItem = new LTI\LineItem($platform, "Rating: {$updateItem->item_title}", $updateItem->max_rating);
+                    $lineItem->resourceId = strval($updateItem->item_pk);
+                    $lineItem->tag = 'Rating';
+                    $resourceLink->createLineItem($lineItem);
                 }
                 $_SESSION['message'] = 'The item has been saved.';
-                if (!$_SESSION['isContentItem'] && ($update_item->visible != $was_visible)) {
+                if (!$_SESSION['isContentItem'] && ($updateItem->visible != $wasVisible)) {
                     updateGradebook($db);
                 }
             } else {
@@ -77,19 +77,19 @@ if ($ok) {
 
 // Process delete item action
     } else if ($action == 'delete') {
-        $update_item = getItem($db, $_SESSION['resource_pk'], $id);
-        $was_visible = $update_item->visible;
+        $updateItem = getItem($db, $_SESSION['resource_pk'], $id);
+        $wasVisible = $updateItem->visible;
         if (deleteItem($db, $_SESSION['resource_pk'], $id)) {
-            $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-            $resource_link = LTI\ResourceLink::fromRecordId($_SESSION['resource_pk'], $data_connector);
-            if ($resource_link->hasLineItemService()) {
-                $line_items = $resource_link->getLineItems(strval($id));
-                if (!empty($line_items)) {
-                    $line_items[0]->delete();
+            $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+            $resourceLink = LTI\ResourceLink::fromRecordId($_SESSION['resource_pk'], $dataConnector);
+            if ($resourceLink->hasLineItemService()) {
+                $lineItems = $resourceLink->getLineItems(strval($id));
+                if (!empty($lineItems)) {
+                    $lineItems[0]->delete();
                 }
             }
             $_SESSION['message'] = 'The item has been deleted.';
-            if (!$_SESSION['isContentItem'] && $was_visible) {
+            if (!$_SESSION['isContentItem'] && $wasVisible) {
                 updateGradebook($db);
             }
         } else {
@@ -101,7 +101,7 @@ if ($ok) {
 // Process content-item save action
     } else if ($action == 'saveci') {
 // Pass on preference for overlay, popup, iframe, frame options in that order if any of these is offered
-        $placement = NULL;
+        $placement = null;
         $documentTarget = '';
         if (in_array('overlay', $_SESSION['document_targets'])) {
             $documentTarget = 'overlay';
@@ -113,7 +113,7 @@ if ($ok) {
             $documentTarget = 'frame';
         }
         if (!empty($documentTarget)) {
-            $placement = new LTI\ContentItemPlacement(NULL, NULL, $documentTarget, NULL);
+            $placement = new LTI\ContentItemPlacement(null, null, $documentTarget, null);
         }
         $item = new LTI\ContentItem('LtiLink', $placement);
         $item->setMediaType(LTI\ContentItem::LTI_LINK_MEDIA_TYPE);
@@ -121,15 +121,15 @@ if ($ok) {
         $item->setText($_SESSION['text']);
         $item->icon = new LTI\ContentItemImage(getAppUrl() . 'images/icon50.png', 50, 50);
         $item->custom = array('content_item_id' => $_SESSION['resource_id']);
-        $form_params['content_items'] = LTI\ContentItem::toJson($item);
+        $formParams['content_items'] = LTI\ContentItem::toJson($item);
         if (!is_null($_SESSION['data'])) {
-            $form_params['data'] = $_SESSION['data'];
+            $formParams['data'] = $_SESSION['data'];
         }
-        $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-        $consumer = LTI\ToolConsumer::fromRecordId($_SESSION['consumer_pk'], $data_connector);
-        $form_params = $consumer->signParameters($_SESSION['return_url'], 'ContentItemSelection', $_SESSION['lti_version'],
-            $form_params);
-        $page = LTI\ToolProvider::sendForm($_SESSION['return_url'], $form_params);
+        $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+        $platform = LTI\Platform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
+        $formParams = $platform->signParameters($_SESSION['return_url'], 'ContentItemSelection', $_SESSION['lti_version'],
+            $formParams);
+        $page = LTI\Util::sendForm($_SESSION['return_url'], $formParams);
         echo $page;
         exit;
 
@@ -138,15 +138,15 @@ if ($ok) {
 
         deleteAllItems($db, $_SESSION['resource_pk']);
 
-        $form_params = array();
+        $formParams = array();
         if (!is_null($_SESSION['data'])) {
-            $form_params['data'] = $_SESSION['data'];
+            $formParams['data'] = $_SESSION['data'];
         }
-        $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-        $consumer = LTI\ToolConsumer::fromRecordId($_SESSION['consumer_pk'], $data_connector);
-        $form_params = $consumer->signParameters($_SESSION['return_url'], 'ContentItemSelection', $_SESSION['lti_version'],
-            $form_params);
-        $page = LTI\ToolProvider::sendForm($_SESSION['return_url'], $form_params);
+        $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+        $platform = LTI\Platrform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
+        $formParams = $platform->signParameters($_SESSION['return_url'], 'ContentItemSelection', $_SESSION['lti_version'],
+            $formParams);
+        $page = LTI\Util::sendForm($_SESSION['return_url'], $formParams);
         echo $page;
         exit;
 
@@ -160,11 +160,11 @@ if ($ok) {
         header('Location: ./');
         exit;
     } else if (isset($_POST['userlist'])) {
-        $user_list = true;
+        $userList = true;
     }
 
 // Initialise an empty item instance
-    $update_item = new Item();
+    $updateItem = new Item();
 
 // Fetch a list of existing items for the resource link
     if (isset($_SESSION['resource_pk'])) {
@@ -175,7 +175,7 @@ if ($ok) {
 
     if ($_SESSION['isStudent']) {
 // Fetch a list of ratings for items for the resource link for the student
-        $user_rated = getUserRated($db, $_SESSION['resource_pk'], $_SESSION['user_pk']);
+        $userRated = getUserRated($db, $_SESSION['resource_pk'], $_SESSION['user_pk']);
     }
 }
 
@@ -260,7 +260,7 @@ EOD;
     unset($_SESSION['message']);
 }
 
-// Display table of existing tool consumer records
+// Display table of existing platform records
 if ($ok) {
 
     if (count($items) <= 0) {
@@ -279,15 +279,15 @@ EOD;
             if (!$_SESSION['isStudent'] || $item->visible) {
                 $row++;
                 if (!empty($id) && ($id == $item->item_pk)) {
-                    $update_item = $item;
+                    $updateItem = $item;
                 }
                 if (!$item->visible) {
-                    $trclass = 'notvisible';
+                    $trClass = 'notvisible';
                     $row--;
                 } else if (($row % 2) == 1) {
-                    $trclass = 'oddrow';
+                    $trClass = 'oddrow';
                 } else {
-                    $trclass = 'evenrow';
+                    $trClass = 'evenrow';
                 }
                 if (isset($item->item_url)) {
                     $title = '<a href="' . $item->item_url . '" target="_blank">' . $item->item_title . '</a>';
@@ -305,13 +305,13 @@ EOD;
                 $step = 1.0 / $item->step;
                 $value = '0';
                 $readonly = 'true';
-                if ($_SESSION['isStudent'] && !in_array(strval($item->item_pk), $user_rated)) {
+                if ($_SESSION['isStudent'] && !in_array(strval($item->item_pk), $userRated)) {
                     $readonly = 'false';
                 } else if ($item->num_ratings > 0) {
                     $value = floatToStr($item->tot_ratings / $item->num_ratings);
                 }
                 $page .= <<< EOD
-    <tr class="{$trclass}">
+    <tr class="{$trClass}">
       <td><span class="title">{$title}</span>{$text}</td>
       <td><div data-id="{$item->item_pk}" title="{$value}" class="rateit" data-rateit-min="0" data-rateit-max="{$item->max_rating}" data-rateit-step="{$step}" data-rateit-value="{$value}" data-rateit-readonly="{$readonly}" data-rateit-mode="font"></div></td>
 
@@ -357,16 +357,16 @@ EOD;
 }
 
 // Display form for adding/editing an item
-if ($ok && !$_SESSION['isStudent'] && ($_SESSION['resource_pk'] === $_SESSION['user_resource_pk'])) {
-    if (isset($update_item->item_pk)) {
+if ($ok && !$_SESSION['isStudent'] && ($_SESSION['isContentItem'] || ($_SESSION['resource_pk'] === $_SESSION['user_resource_pk']))) {
+    if (isset($updateItem->item_pk)) {
         $mode = 'Update';
     } else {
         $mode = 'Add new';
     }
-    $title = htmlentities($update_item->item_title);
-    $url = htmlentities($update_item->item_url);
-    $text = htmlentities($update_item->item_text);
-    if ($update_item->visible) {
+    $title = htmlentities($updateItem->item_title);
+    $url = htmlentities($updateItem->item_url);
+    $text = htmlentities($updateItem->item_text);
+    if ($updateItem->visible) {
         $checked = ' checked="checked"';
     } else {
         $checked = '';
@@ -404,7 +404,7 @@ if ($ok && !$_SESSION['isStudent'] && ($_SESSION['resource_pk'] === $_SESSION['u
 
 EOD;
     for ($i = 3; $i <= 10; $i++) {
-        if ($i == $update_item->max_rating) {
+        if ($i == $updateItem->max_rating) {
             $sel = ' selected="selected"';
         } else {
             $sel = '';
@@ -417,13 +417,13 @@ EOD;
     $sel1 = '';
     $sel2 = '';
     $sel4 = '';
-    if ($update_item->step == 1) {
+    if ($updateItem->step == 1) {
         $sel1 = ' selected="selected"';
     }
-    if ($update_item->step == 2) {
+    if ($updateItem->step == 2) {
         $sel2 = ' selected="selected"';
     }
-    if ($update_item->step == 4) {
+    if ($updateItem->step == 4) {
         $sel4 = ' selected="selected"';
     }
     $page .= <<< EOD
@@ -440,7 +440,7 @@ EOD;
 
 EOD;
 
-    if (isset($update_item->item_pk)) {
+    if (isset($updateItem->item_pk)) {
         $page .= <<< EOD
       &nbsp;<input type="reset" value="Cancel" onclick="location.href='./';" />
 
@@ -450,7 +450,7 @@ EOD;
     </div>
 
 EOD;
-    if ($_SESSION['isContentItem'] && !isset($update_item->item_pk)) {
+    if ($_SESSION['isContentItem'] && !isset($updateItem->item_pk)) {
         $disabled = '';
         if (count($items) <= 0) {
             $disabled = ' disabled="disabled"';
@@ -469,9 +469,9 @@ EOD;
 
 EOD;
 
-    $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-    $resource_link = ResourceLink::fromRecordId($_SESSION['resource_pk'], $data_connector);
-    $shares = $resource_link->getShares();
+    $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+    $resourceLink = ResourceLink::fromRecordId($_SESSION['resource_pk'], $dataConnector);
+    $shares = $resourceLink->getShares();
     if (count($shares) > 0) {
         $page .= <<< EOD
 
@@ -507,7 +507,7 @@ EOD;
     <td>{$share->title}</td>
     <td class="aligncentre"><img id="img{$i}" src="images/{$shareApproved}.gif" alt="{$shareApproved_alt}" title="{$shareApproved_alt}" /></td>
     <td class="aligncentre">
-      <input type="button" id="btn{$i}" value="{$action}" onclick="return doApprove({$i}, '{$action}', {$share->resourceLinkId});" />
+      <input type="button" id="btn{$i}" value="{$action}" onclick="return doAction({$i}, '{$action}', {$share->resourceLinkId});" />
       <a href="share.php?do=cancel&rlid={$share->resourceLinkId}"><input type="button" value="Cancel" onclick="return confirm('Cancel share; are you sure?');" /></a>
     </td>
   </tr>
@@ -525,9 +525,9 @@ EOD;
   <div class="clear" style="margin-left: 10px;">
 
 EOD;
-    if ($resource_link->hasMembershipsService()) {
-        if ($user_list) {
-            $members = $resource_link->getMemberships(true);
+    if ($resourceLink->hasMembershipsService()) {
+        if ($userList) {
+            $members = $resourceLink->getMemberships(true);
             $page .= <<< EOD
     <form action="./" method="post">
       <input type="submit" name="userlist" value="Refresh user list" />
@@ -575,7 +575,7 @@ EOD;
     </table>
 
 EOD;
-            if (count($resource_link->groupSets) > 0) {
+            if (count($resourceLink->groupSets) > 0) {
                 $page .= <<< EOD
     <h2>Group sets</h2>
 
@@ -589,21 +589,21 @@ EOD;
     <tbody>
 
 EOD;
-                $group_sets = array();
-                foreach ($resource_link->groupSets as $group_set_id => $group_set) {
-                    $group_sets[$group_set['title']] = $group_set;
+                $groupSets = array();
+                foreach ($resourceLink->groupSets as $groupSetId => $groupSet) {
+                    $groupSets[$groupSet['title']] = $groupSet;
                 }
-                ksort($group_sets);
-                foreach ($group_sets as $title => $group_set) {
+                ksort($groupSets);
+                foreach ($groupSets as $title => $groupSet) {
                     $page .= <<< EOD
       <tr>
         <td>{$title}</td>
         <td>
 
 EOD;
-                    foreach ($group_set['groups'] as $group_id) {
+                    foreach ($groupSet['groups'] as $groupId) {
                         $page .= <<< EOD
-           {$resource_link->groups[$group_id]['title']}<br />
+           {$resourceLink->groups[$groupId]['title']}<br />
 
 EOD;
                     }

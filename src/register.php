@@ -4,45 +4,45 @@ use ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector;
 
 /**
- * This page displays a UI for registering the tool with a tool consumer.
+ * This page displays a UI for registering the tool with an LTI platformr.
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   3.2.0
+ * @version   4.0.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 require_once('rating_tp.php');
 
 // Initialise session and database
 $page = '';
-$db = NULL;
+$db = null;
 if (init($db)) {
 
 // Register
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-        $error_msg = '';
+        $errorMsg = '';
         $url = $_SESSION['return_url'];
-        if (strpos($url, '?') === FALSE) {
+        if (strpos($url, '?') === false) {
             $sep = '?';
         } else {
             $sep = '&';
         }
-        $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-        $tool = new RatingToolProvider($data_connector);
-        $tool->consumer = LTI\ToolConsumer::fromRecordId($_SESSION['consumer_pk'], $data_connector);
+        $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+        $tool = new RatingTool($dataConnector);
+        $tool->platform = LTI\Platform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
         $do = $_POST['do'];
         if ($do == 'Register') {
             $ok = $tool->doToolProxyService($_SESSION['tc_profile_url']);
             if ($ok) {
-                $guid = $tool->consumer->getKey();
+                $guid = $tool->platform->getKey();
                 header("Location: {$url}{$sep}lti_msg=The%20tool%20has%20been%20registered&status=success&tool_proxy_guid={$guid}");
                 exit;
             } else {
-                $error_msg = 'Error setting tool proxy';
+                $errorMsg = 'Error setting tool proxy';
             }
         } else if ($do == 'Cancel') {
-            $tool->consumer->delete();
+            $tool->platform->delete();
             header("Location: {$url}{$sep}lti_msg=The%20tool%20registration%20has%20been%20cancelled&status=failure");
             exit;
         }
@@ -52,10 +52,10 @@ if (init($db)) {
 <form action="register.php" method="post">
 
 EOD;
-    if (!empty($error_msg)) {
+    if (!empty($errorMsg)) {
         $page .= <<< EOD
 <p style="color: #f00; font-weight: bold;">
-  {$error_msg}
+  {$errorMsg}
 </p>
 EOD;
     }

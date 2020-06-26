@@ -4,21 +4,21 @@ use ceLTIc\LTI;
 use ceLTIc\LTI\Profile;
 
 /**
- * This page processes a launch request from an LTI tool consumer.
+ * This page processes a launch request from an LTI platform.
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   3.2.0
+ * @version   4.0.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 require_once('lib.php');
 
-class RatingToolProvider extends LTI\ToolProvider
+class RatingTool extends LTI\Tool
 {
 
-    function __construct($data_connector)
+    function __construct($dataConnector)
     {
-        parent::__construct($data_connector);
+        parent::__construct($dataConnector);
 
         $this->allowSharing = true;
 
@@ -26,8 +26,7 @@ class RatingToolProvider extends LTI\ToolProvider
 
         $this->vendor = new Profile\Item('ims', 'IMSGlobal', 'IMS Global Learning Consortium Inc', 'https://www.imsglobal.org/');
         $this->product = new Profile\Item('d751f24f-140e-470f-944c-2d92b114db40', 'Rating',
-            'Sample LTI tool provider to create lists of items to be rated.', 'http://www.spvsoftwareproducts.com/php/rating/',
-            VERSION);
+            'Sample LTI tool to create lists of items to be rated.', 'http://www.spvsoftwareproducts.com/php/rating/', VERSION);
 
         $requiredMessages = array(new Profile\Message('basic-lti-launch-request', 'connect.php', array('User.id', 'Membership.role')));
         $optionalMessages = array(new Profile\Message('ContentItemSelectionRequest', 'connect.php',
@@ -36,10 +35,15 @@ class RatingToolProvider extends LTI\ToolProvider
                 array('b' => 'User.id')));
 
         $this->resourceHandlers[] = new Profile\ResourceHandler(
-            new Profile\Item('rating', 'Rating app', 'An example tool provider which generates lists of items for rating.'),
+            new Profile\Item('rating', 'Rating app', 'An example tool which generates lists of items for rating.'),
             'images/icon50.png', $requiredMessages, $optionalMessages);
 
         $this->requiredServices[] = new Profile\ServiceDefinition(array('application/vnd.ims.lti.v2.toolproxy+json'), array('POST'));
+
+        $this->signatureMethod = SIGNATURE_METHOD;
+        $this->kid = KID;
+        $this->rsaKey = PRIVATE_KEY;
+        $this->requiredScopes = array(LTI\Service\Score::$SCOPE);
     }
 
     function onLaunch()
@@ -47,25 +51,25 @@ class RatingToolProvider extends LTI\ToolProvider
 // Check the user has an appropriate role
         if ($this->userResult->isLearner() || $this->userResult->isStaff()) {
 // Initialise the user session
-            $_SESSION['consumer_pk'] = $this->consumer->getRecordId();
+            $_SESSION['consumer_pk'] = $this->platform->getRecordId();
             $_SESSION['resource_pk'] = $this->resourceLink->getRecordId();
-            $_SESSION['user_consumer_pk'] = $this->userResult->getResourceLink()->getConsumer()->getRecordId();
+            $_SESSION['user_consumer_pk'] = $this->userResult->getResourceLink()->getPlatform()->getRecordId();
             $_SESSION['user_resource_pk'] = $this->userResult->getResourceLink()->getRecordId();
             $_SESSION['user_pk'] = $this->userResult->getRecordId();
             $_SESSION['isStudent'] = $this->userResult->isLearner();
-            $_SESSION['isContentItem'] = FALSE;
+            $_SESSION['isContentItem'] = false;
 
 // Redirect the user to display the list of items for the resource link
             $this->redirectUrl = getAppUrl();
         } else {
             $this->reason = 'Invalid role.';
-            $this->ok = FALSE;
+            $this->ok = false;
         }
     }
 
     function onContentItem()
     {
-// Check that the Tool Consumer is allowing the return of an LTI link
+// Check that the Platform is allowing the return of an LTI link
         $this->ok = in_array(LTI\ContentItem::LTI_LINK_MEDIA_TYPE, $this->mediaTypes) || in_array('*/*', $this->mediaTypes);
         if (!$this->ok) {
             $this->reason = 'Return of an LTI link not offered';
@@ -77,13 +81,13 @@ class RatingToolProvider extends LTI\ToolProvider
         }
         if ($this->ok) {
 // Initialise the user session
-            $_SESSION['consumer_pk'] = $this->consumer->getRecordId();
+            $_SESSION['consumer_pk'] = $this->platform->getRecordId();
             $_SESSION['resource_id'] = getGuid();
-            $_SESSION['resource_pk'] = NULL;
+            $_SESSION['resource_pk'] = null;
             $_SESSION['user_consumer_pk'] = $_SESSION['consumer_pk'];
-            $_SESSION['user_pk'] = NULL;
-            $_SESSION['isStudent'] = FALSE;
-            $_SESSION['isContentItem'] = TRUE;
+            $_SESSION['user_pk'] = null;
+            $_SESSION['isStudent'] = false;
+            $_SESSION['isContentItem'] = true;
             $_SESSION['lti_version'] = $_POST['lti_version'];
             $_SESSION['return_url'] = $this->returnUrl;
             $_SESSION['title'] = postValue('title', 'Rating item');
@@ -100,36 +104,36 @@ class RatingToolProvider extends LTI\ToolProvider
         global $db;
 
         $title = APP_NAME;
-        $app_url = 'http://www.spvsoftwareproducts.com/php/rating/';
-        $icon_url = getAppUrl() . 'images/icon50.png';
+        $appUrl = 'http://www.spvsoftwareproducts.com/php/rating/';
+        $iconUrl = getAppUrl() . 'images/icon50.png';
         if (empty($this->context)) {
-            $ratings = getUserSummary($db, $this->userResult->getResourceLink()->getConsumer()->getRecordId(),
+            $ratings = getUserSummary($db, $this->userResult->getResourceLink()->getPlatform()->getRecordId(),
                 $this->userResult->getRecordId());
-            $num_ratings = count($ratings);
+            $numRatings = count($ratings);
             $courses = array();
             $lists = array();
             $tot_rating = 0;
             foreach ($ratings as $rating) {
-                $courses[$rating->lti_context_id] = TRUE;
-                $lists[$rating->resource_id] = TRUE;
+                $courses[$rating->lti_context_id] = true;
+                $lists[$rating->resource_id] = true;
                 $tot_rating += ($rating->rating / $rating->max_rating);
             }
-            $num_courses = count($courses);
-            $num_lists = count($lists);
-            if ($num_ratings > 0) {
-                $av_rating = floatToStr($tot_rating / $num_ratings * 5);
+            $numCourses = count($courses);
+            $numLists = count($lists);
+            if ($numRatings > 0) {
+                $av_rating = floatToStr($tot_rating / $numRatings * 5);
             }
             $html = <<< EOD
         <p>
           Here is a summary of your rating of items:
         </p>
         <ul>
-          <li><em>Number of courses:</em> {$num_courses}</li>
-          <li><em>Number of rating lists:</em> {$num_lists}</li>
-          <li><em>Number of ratings made:</em> {$num_ratings}</li>
+          <li><em>Number of courses:</em> {$numCourses}</li>
+          <li><em>Number of rating lists:</em> {$numLists}</li>
+          <li><em>Number of ratings made:</em> {$numRatings}</li>
 
 EOD;
-            if ($num_ratings > 0) {
+            if ($numRatings > 0) {
                 $html .= <<< EOD
           <li><em>Average rating:</em> {$av_rating} out of 5</li>
 
@@ -179,12 +183,12 @@ EOD;
 <rss xmlns:a10="http://www.w3.org/2005/Atom" version="2.0">
   <channel>
     <title>Dashboard</title>
-    <link>{$app_url}</link>
+    <link>{$appUrl}</link>
     <description />
     <image>
-      <url>{$icon_url}</url>
+      <url>{$iconUrl}</url>
       <title>Dashboard</title>
-      <link>{$app_url}</link>
+      <link>{$appUrl}</link>
       <description>{$title} Dashboard</description>
     </image>{$items}
   </channel>
@@ -198,9 +202,9 @@ EOD;
     function onRegister()
     {
 // Initialise the user session
-        $_SESSION['consumer_pk'] = $this->consumer->getRecordId();
+        $_SESSION['consumer_pk'] = $this->platform->getRecordId();
         $_SESSION['tc_profile_url'] = $_POST['tc_profile_url'];
-        $_SESSION['tc_profile'] = $this->consumer->profile;
+        $_SESSION['tc_profile'] = $this->platform->profile;
         $_SESSION['return_url'] = $_POST['launch_presentation_return_url'];
 
 // Redirect the user to process the registration

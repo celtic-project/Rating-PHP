@@ -38,32 +38,32 @@ if ($ok) {
         $rlid = intval($_REQUEST['rlid']);
     }
 // Process share action
-    $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+    $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
     if (($action == 'generate') && !empty($life)) {
-        $resource_link = ResourceLink::fromRecordId($_SESSION['resource_pk'], $data_connector);
-        $auto_approve = false;
+        $resourceLink = ResourceLink::fromRecordId($_SESSION['resource_pk'], $dataConnector);
+        $autoApprove = false;
         if (isset($_REQUEST['auto_approve'])) {
-            $auto_approve = $_REQUEST['auto_approve'] === 'yes';
+            $autoApprove = $_REQUEST['auto_approve'] === 'yes';
         }
-        $length = intval($resource_link->getSetting('custom_share_key_length'));
+        $length = intval($resourceLink->getSetting('custom_share_key_length'));
         if (empty($length)) {
             $length = 6;
         }
-        $share_key = new ResourceLinkShareKey($resource_link);
-        $share_key->length = $length;
-        $share_key->life = $life;
-        $share_key->autoApprove = $auto_approve;
-        $ok = $share_key->save();
-        $response = $share_key->getId();
+        $shareKey = new ResourceLinkShareKey($resourceLink);
+        $shareKey->length = $length;
+        $shareKey->life = $life;
+        $shareKey->autoApprove = $autoApprove;
+        $ok = $shareKey->save();
+        $response = $shareKey->getId();
     } else if ((($action == 'approve') || ($action == 'suspend')) && !empty($rlid)) {
-        $resource_link = ResourceLink::fromRecordId($rlid, $data_connector);
-        $resource_link->shareApproved = ($action === 'approve');
-        $ok = $resource_link->save();
+        $resourceLink = ResourceLink::fromRecordId($rlid, $dataConnector);
+        $resourceLink->shareApproved = ($action === 'approve');
+        $ok = $resourceLink->save();
     } else if (($action == 'cancel') && !empty($rlid)) {
-        $resource_link = ResourceLink::fromRecordId($rlid, $data_connector);
-        $resource_link->primaryResourceLinkId = null;
-        $resource_link->shareApproved = null;
-        $resource_link->save();
+        $resourceLink = ResourceLink::fromRecordId($rlid, $dataConnector);
+        $resourceLink->primaryResourceLinkId = null;
+        $resourceLink->shareApproved = null;
+        $resourceLink->save();
         header('Location: index.php');
         exit;
     }

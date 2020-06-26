@@ -1,35 +1,37 @@
 <?php
 
-use ceLTIc\LTI;
-use ceLTIc\LTI\DataConnector;
+use ceLTIc\LTI\Platform;
+use ceLTIc\LTI\Tool;
+use ceLTIc\LTI\DataConnector\DataConnector;
+use ceLTIc\LTI\Util;
 
 /**
- * This page manages the definition of tool consumer records.  A tool consumer record is required to
+ * This page manages the definition of LTI platform records.  A platform record is required to
  * enable each VLE to securely connect to this application.
  *
  * *** IMPORTANT ***
- * Access to this page should be restricted to prevent unauthorised access to the configuration of tool
- * consumers (for example, using an entry in an Apache .htaccess file); access to all other pages is
+ * Access to this page should be restricted to prevent unauthorised access to the configuration of
+ * platforms (for example, using an entry in an Apache .htaccess file); access to all other pages is
  * authorised by LTI.
  * ***           ***
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   3.2.0
+ * @version   4.0.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 require_once('../lib.php');
 
 // Initialise session and database
-$db = NULL;
-$ok = init($db, FALSE);
+$db = null;
+$ok = init($db, false);
 // Initialise parameters
-$id = NULL;
+$id = null;
 if ($ok) {
-// Create LTI Tool Provider instance
-    $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-    $tool = new LTI\ToolProvider($data_connector);
-// Check for consumer id and action parameters
+// Create LTI Tool instance
+    $dataConnector = DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+    $tool = new Tool($dataConnector);
+// Check for platform id and action parameters
     $action = '';
     if (isset($_REQUEST['id'])) {
         $id = intval($_REQUEST['id']);
@@ -38,95 +40,158 @@ if ($ok) {
         $action = $_REQUEST['do'];
     }
 
-// Process add consumer action
-    if (($action == 'add') && (!empty($id) || !empty($_REQUEST['key']))) {
-        if (empty($id)) {
-            $update_consumer = new LTI\ToolConsumer($_REQUEST['key'], $data_connector);
-            $update_consumer->ltiVersion = LTI\ToolProvider::LTI_VERSION1;
-        } else {
-            $update_consumer = LTI\ToolConsumer::fromRecordId($id, $data_connector);
-        }
-        $update_consumer->name = $_POST['name'];
-        if (isset($_POST['secret'])) {
-            $update_consumer->secret = $_POST['secret'];
-        }
-        $update_consumer->enabled = isset($_POST['enabled']);
-        $date = $_POST['enable_from'];
-        if (empty($date)) {
-            $update_consumer->enableFrom = NULL;
-        } else {
-            $update_consumer->enableFrom = strtotime($date);
-        }
-        $date = $_POST['enable_until'];
-        if (empty($date)) {
-            $update_consumer->enableUntil = NULL;
-        } else {
-            $update_consumer->enableUntil = strtotime($date);
-        }
-        $update_consumer->protected = isset($_POST['protected']);
-        $settings = $update_consumer->getSettings();
-        foreach ($settings as $prop => $value) {
-            if (strpos($prop, 'custom_') !== 0) {
-                $update_consumer->setSetting($prop);
+// Process add platform action
+    if ($action == 'add') {
+        if (!empty($id) || !empty($_POST['name'])) {
+            if (empty($id)) {
+                $updatePlatform = new Platform($dataConnector);
+                $updatePlatform->ltiVersion = Util::LTI_VERSION1;
+            } else {
+                $updatePlatform = Platform::fromRecordId($id, $dataConnector);
             }
-        }
-        $properties = $_POST['properties'];
-        $properties = str_replace("\r\n", "\n", $properties);
-        $properties = explode("\n", $properties);
-        foreach ($properties as $property) {
-            if (strpos($property, '=') !== false) {
-                list($name, $value) = explode('=', $property, 2);
-                if ($name) {
-                    $update_consumer->setSetting($name, $value);
+            if (!empty($_POST['key'])) {
+                $updatePlatform->setKey($_POST['key']);
+            }
+            if (!empty($_POST['name'])) {
+                $updatePlatform->name = $_POST['name'];
+            } else {
+                $updatePlatform->name = null;
+            }
+            if (!empty($_POST['secret'])) {
+                $updatePlatform->secret = $_POST['secret'];
+            } else {
+                $updatePlatform->secret = null;
+            }
+            if (!empty($_POST['platformid'])) {
+                $updatePlatform->platformId = $_POST['platformid'];
+            } else {
+                $updatePlatform->platformId = null;
+            }
+            if (!empty($_POST['clientid'])) {
+                $updatePlatform->clientId = $_POST['clientid'];
+            } else {
+                $updatePlatform->clientId = null;
+            }
+            if (!empty($_POST['deploymentid'])) {
+                $updatePlatform->deploymentId = $_POST['deploymentid'];
+            } else {
+                $updatePlatform->deploymentId = null;
+            }
+            if (!empty($_POST['authorizationserverid'])) {
+                $updatePlatform->authorizationServerId = $_POST['authorizationserverid'];
+            } else {
+                $updatePlatform->authorizationServerId = null;
+            }
+            if (!empty($_POST['authenticationurl'])) {
+                $updatePlatform->authenticationUrl = $_POST['authenticationurl'];
+            } else {
+                $updatePlatform->authenticationUrl = null;
+            }
+            if (!empty($_POST['accesstokenurl'])) {
+                $updatePlatform->accessTokenUrl = $_POST['accesstokenurl'];
+            } else {
+                $updatePlatform->accessTokenUrl = null;
+            }
+            if (!empty($_POST['publickey'])) {
+                $updatePlatform->rsaKey = $_POST['publickey'];
+            } else {
+                $updatePlatform->rsaKey = null;
+            }
+            if (!empty($_POST['jku'])) {
+                $updatePlatform->jku = $_POST['jku'];
+            } else {
+                $updatePlatform->jku = null;
+            }
+            if (!empty($_POST['ltiversion'])) {
+                $updatePlatform->ltiVersion = $_POST['ltiversion'];
+                if ($updatePlatform->ltiVersion === Util::LTI_VERSION1P3) {
+                    $updatePlatform->signatureMethod = 'RS256';
                 }
             }
-        }
+            $updatePlatform->enabled = isset($_POST['enabled']);
+            $date = $_POST['enable_from'];
+            if (empty($date)) {
+                $updatePlatform->enableFrom = null;
+            } else {
+                $updatePlatform->enableFrom = strtotime($date);
+            }
+            $date = $_POST['enable_until'];
+            if (empty($date)) {
+                $updatePlatform->enableUntil = null;
+            } else {
+                $updatePlatform->enableUntil = strtotime($date);
+            }
+            $updatePlatform->protected = isset($_POST['protected']);
+            $settings = $updatePlatform->getSettings();
+            foreach ($settings as $prop => $value) {
+                if (strpos($prop, 'custom_') !== 0) {
+                    $updatePlatform->setSetting($prop);
+                }
+            }
+            $properties = $_POST['properties'];
+            $properties = str_replace("\r\n", "\n", $properties);
+            $properties = explode("\n", $properties);
+            foreach ($properties as $property) {
+                if (strpos($property, '=') !== false) {
+                    list($name, $value) = explode('=', $property, 2);
+                    if ($name) {
+                        $updatePlatform->setSetting($name, $value);
+                    }
+                }
+            }
+            $updatePlatform->debugMode = isset($_POST['debug']);
 // Ensure all required fields have been provided
-        if ($update_consumer->save()) {
-            $_SESSION['message'] = 'The consumer has been saved.';
+            if ($updatePlatform->save()) {
+                $_SESSION['message'] = 'The platform has been saved.';
+            } else {
+                $_SESSION['error_message'] = 'Unable to save the platform; please check the data and try again.';
+            }
         } else {
-            $_SESSION['error_message'] = 'Unable to save the consumer; please check the data and try again.';
+            $_SESSION['error_message'] = 'Please enter a name.';
         }
         header('Location: ./');
         exit;
-
-// Process delete consumer action
+// Process delete platform action
     } else if ($action == 'delete') {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ok = true;
             foreach ($_POST['ids'] as $id) {
-                $consumer = LTI\ToolConsumer::fromRecordId($id, $data_connector);
-                $ok = $ok && $consumer->delete();
+                $platform = Platform::fromRecordId($id, $dataConnector);
+                $ok = $ok && $platform->delete();
             }
             if ($ok) {
-                $_SESSION['message'] = 'The selected consumers have been deleted.';
+                $_SESSION['message'] = 'The selected platforms have been deleted.';
             } else {
-                $_SESSION['error_message'] = 'Unable to delete at least one of the selected consumers; please try again.';
+                $_SESSION['error_message'] = 'Unable to delete at least one of the selected platforms; please try again.';
             }
         } else {
-            $consumer = LTI\ToolConsumer::fromRecordId($id, $data_connector);
-            if ($consumer->delete()) {
-                $_SESSION['message'] = 'The consumer has been deleted.';
+            $platform = Platform::fromRecordId($id, $dataConnector);
+            if ($platform->delete()) {
+                $_SESSION['message'] = 'The platform has been deleted.';
             } else {
-                $_SESSION['error_message'] = 'Unable to delete the consumer; please try again.';
+                $_SESSION['error_message'] = 'Unable to delete the platform; please try again.';
             }
         }
         header('Location: ./');
         exit;
     } else {
-// Initialise an empty tool consumer instance
-        $update_consumer = new LTI\ToolConsumer(NULL, $data_connector);
+// Initialise an empty tool platform instance
+        $updatePlatform = new Platform($dataConnector);
+        $updatePlatform->secret = Util::getRandomString(32);
     }
 
-// Fetch a list of existing tool consumer records
-    $consumers = $tool->getConsumers();
+// Fetch a list of existing tool platform records
+    $platforms = $tool->getPlatforms();
 
 // Set launch URL for information
     $launchUrl = getAppUrl() . 'connect.php';
+
+// Set launch URL for information
+    $jwksUrl = getAppUrl() . 'jwks.php';
 }
 
 // Page header
-$title = APP_NAME . ': Manage tool consumers';
+$title = APP_NAME . ': Manage platforms';
 $page = <<< EOD
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
@@ -146,6 +211,34 @@ function toggleSelect(el) {
   }
   document.getElementById('delsel').disabled = (numSelected <= 0);
 }
+
+function onVersionChange(el) {
+  if (el.selectedIndex <= 0) {
+//    document.getElementById('id_keylabel').innerHTML = 'Key:';
+    displayv1 = 'block';
+    displayv1p3 = 'none';
+  } else {
+//    document.getElementById('id_keylabel').innerHTML = 'Client ID:';
+    displayv1 = 'none';
+    displayv1p3 = 'block';
+  }
+  document.getElementById('id_key').style.display = displayv1;
+  document.getElementById('id_secret').style.display = displayv1;
+  document.getElementById('id_platformid').style.display = displayv1p3;
+  document.getElementById('id_clientid').style.display = displayv1p3;
+  document.getElementById('id_deploymentid').style.display = displayv1p3;
+  document.getElementById('id_authorizationserverid').style.display = displayv1p3;
+  document.getElementById('id_authenticationurl').style.display = displayv1p3;
+  document.getElementById('id_accessTokenurl').style.display = displayv1p3;
+  document.getElementById('id_publickey').style.display = displayv1p3;
+  document.getElementById('id_jku').style.display = displayv1p3;
+}
+
+function doOnLoad() {
+  onVersionChange(document.getElementById('id_ltiversion'));
+}
+
+window.onload=doOnLoad;
 //]]>
 </script>
 </head>
@@ -180,26 +273,30 @@ EOD;
     unset($_SESSION['message']);
 }
 
-// Display table of existing tool consumer records
+// Display table of existing platform records
 if ($ok) {
 
-    if (count($consumers) <= 0) {
+    if (count($platforms) <= 0) {
         $page .= <<< EOD
-<p>No consumers have been added yet.</p>
+<p>No platforms have been added yet.</p>
 
 EOD;
     } else {
         $page .= <<< EOD
-<form action="./?do=delete" method="post" onsubmit="return confirm('Delete selected consumers; are you sure?');">
+<form action="./?do=delete" method="post" onsubmit="return confirm('Delete selected platforms; are you sure?');">
 <table class="items" border="1" cellpadding="3">
 <thead>
   <tr>
     <th>&nbsp;</th>
     <th>Name</th>
     <th>Key</th>
+    <th>Platform ID</th>
+    <th>Client ID</th>
+    <th>Deployment ID</th>
     <th>Version</th>
     <th>Available?</th>
     <th>Protected?</th>
+    <th>Debug?</th>
     <th>Last access</th>
     <th>Options</th>
   </tr>
@@ -207,43 +304,54 @@ EOD;
 <tbody>
 
 EOD;
-        foreach ($consumers as $consumer) {
-            $trid = urlencode($consumer->getRecordId());
-            if ($consumer->getRecordId() === $id) {
-                $update_consumer = $consumer;
+        foreach ($platforms as $platform) {
+            $trid = urlencode($platform->getRecordId());
+            if ($platform->getRecordId() === $id) {
+                $updatePlatform = $platform;
             }
-            if (!$consumer->getIsAvailable()) {
+            if (!$platform->getIsAvailable()) {
                 $available = 'cross';
-                $available_alt = 'Not available';
+                $availableAlt = 'Not available';
                 $trclass = 'notvisible';
             } else {
                 $available = 'tick';
-                $available_alt = 'Available';
+                $availableAlt = 'Available';
                 $trclass = '';
             }
-            if ($consumer->protected) {
+            if ($platform->protected) {
                 $protected = 'tick';
-                $protected_alt = 'Protected';
+                $protectedAlt = 'Protected';
             } else {
                 $protected = 'cross';
-                $protected_alt = 'Not protected';
+                $protectedAlt = 'Not protected';
             }
-            if (is_null($consumer->lastAccess)) {
+            if ($platform->debugMode) {
+                $debug = 'tick';
+                $debugAlt = 'Enabled';
+            } else {
+                $debug = 'cross';
+                $debugAlt = 'Disabled';
+            }
+            if (is_null($platform->lastAccess)) {
                 $last = 'None';
             } else {
-                $last = date('j-M-Y', $consumer->lastAccess);
+                $last = date('j-M-Y', $platform->lastAccess);
             }
             $page .= <<< EOD
   <tr class="{$trclass}">
     <td><input type="checkbox" name="ids[]" value="{$trid}" onclick="toggleSelect(this);" /></td>
-    <td>{$consumer->name}</td>
-    <td>{$consumer->getKey()}</td>
-    <td><span title="{$consumer->consumerGuid}">{$consumer->consumerVersion}</span></td>
-    <td class="aligncentre"><img src="../images/{$available}.gif" alt="{$available_alt}" title="{$available_alt}" /></td>
-    <td class="aligncentre"><img src="../images/{$protected}.gif" alt="{$protected_alt}" title="{$protected_alt}" /></td>
+    <td>{$platform->name}</td>
+    <td>{$platform->getKey()}</td>
+    <td>{$platform->platformId}</td>
+    <td>{$platform->clientId}</td>
+    <td>{$platform->deploymentId}</td>
+    <td><span title="{$platform->consumerGuid}">{$platform->consumerVersion}</span></td>
+    <td class="aligncentre"><img src="../images/{$available}.gif" alt="{$availableAlt}" title="{$availableAlt}" /></td>
+    <td class="aligncentre"><img src="../images/{$protected}.gif" alt="{$protectedAlt}" title="{$protectedAlt}" /></td>
+    <td class="aligncentre"><img src="../images/{$debug}.gif" alt="{$debugAlt}" title="{$debugAlt}" /></td>
     <td>{$last}</td>
     <td class="iconcolumn aligncentre">
-      <a href="./?id={$trid}#edit"><img src="../images/edit.png" title="Edit consumer" alt="Edit consumer" /></a>&nbsp;<a href="./?do=delete&amp;id={$trid}" onclick="return confirm('Delete consumer; are you sure?');"><img src="../images/delete.png" title="Delete consumer" alt="Delete consumer" /></a>
+      <a href="./?id={$trid}#edit"><img src="../images/edit.png" title="Edit platform" alt="Edit platform" /></a>&nbsp;<a href="./?do=delete&amp;id={$trid}" onclick="return confirm('Delete platform; are you sure?');"><img src="../images/delete.png" title="Delete platform" alt="Delete platform" /></a>
     </td>
   </tr>
 
@@ -253,74 +361,111 @@ EOD;
 </tbody>
 </table>
 <p>
-<input type="submit" value="Delete selected tool consumers" id="delsel" disabled="disabled" />
+<input type="submit" value="Delete selected tool platforms" id="delsel" disabled="disabled" />
 </p>
 </form>
 
 EOD;
     }
 
-// Display form for adding/editing a tool consumer
+// Display form for adding/editing a platform
     $update = '';
     $lti2 = '';
-    if (!isset($update_consumer->created)) {
+    if (!isset($updatePlatform->created)) {
         $mode = 'Add new';
     } else {
         $mode = 'Update';
         $update = ' disabled="disabled"';
-        if ($update_consumer->ltiVersion === LTI\ToolProvider::LTI_VERSION2) {
+        if ($updatePlatform->ltiVersion === Util::LTI_VERSION2) {
             $lti2 = ' disabled="disabled"';
         }
     }
-    $name = htmlentities($update_consumer->name);
-    $key = htmlentities($update_consumer->getKey());
-    $secret = htmlentities($update_consumer->secret);
-    if ($update_consumer->enabled) {
+    $name = htmlentities($updatePlatform->name);
+    $key = htmlentities($updatePlatform->getKey());
+    $platformId = htmlentities($updatePlatform->platformId);
+    $clientId = htmlentities($updatePlatform->clientId);
+    $deploymentId = htmlentities($updatePlatform->deploymentId);
+    $authorizationServerId = htmlentities($updatePlatform->authorizationServerId);
+    $authenticationUrl = htmlentities($updatePlatform->authenticationUrl);
+    $accessTokenUrl = htmlentities($updatePlatform->accessTokenUrl);
+    $publicKey = htmlentities($updatePlatform->rsaKey);
+    $jku = htmlentities($updatePlatform->jku);
+    $secret = htmlentities($updatePlatform->secret);
+    if ($updatePlatform->enabled) {
         $enabled = ' checked="checked"';
     } else {
         $enabled = '';
     }
-    $enable_from = '';
-    if (!is_null($update_consumer->enableFrom)) {
-        $enable_from = date('j-M-Y H:i', $update_consumer->enableFrom);
+    $enableFrom = '';
+    if (!is_null($updatePlatform->enableFrom)) {
+        $enableFrom = date('j-M-Y H:i', $updatePlatform->enableFrom);
     }
-    $enable_until = '';
-    if (!is_null($update_consumer->enableUntil)) {
-        $enable_until = date('j-M-Y H:i', $update_consumer->enableUntil);
+    $enableUntil = '';
+    if (!is_null($updatePlatform->enableUntil)) {
+        $enableUntil = date('j-M-Y H:i', $updatePlatform->enableUntil);
     }
-    if ($update_consumer->protected) {
+    if ($updatePlatform->protected) {
         $protected = ' checked="checked"';
     } else {
         $protected = '';
     }
     $properties = '';
-    $settings = $update_consumer->getSettings();
+    $settings = $updatePlatform->getSettings();
     foreach ($settings as $prop => $value) {
         if (strpos($prop, 'custom_') !== 0) {
             $properties .= "{$prop}={$value}\n";
         }
     }
+    if ($updatePlatform->debugMode) {
+        $debug = ' checked="checked"';
+    } else {
+        $debug = '';
+    }
+    $v1 = Util::LTI_VERSION1;
+    $v1p3 = Util::LTI_VERSION1P3;
+    $v1Selected = ' selected';
+    $v1p3Selected = '';
+    if ($updatePlatform->ltiVersion === $v1p3) {
+        $v1Selected = '';
+        $v1p3Selected = ' selected';
+    }
+
     $page .= <<< EOD
-<h2><a name="edit">{$mode} consumer</a></h2>
+<h2><a name="edit">{$mode} platform</a></h2>
 
 <form action="./" method="post">
 <div class="box">
-  <span class="label">Name:<span class="required" title="required">*</span></span>&nbsp;<input name="name" type="text" size="50" maxlength="50" value="{$name}" /><br />
-  <span class="label">Key:<span class="required" title="required">*</span></span>&nbsp;<input name="key" type="text" size="75" maxlength="50" value="{$key}"{$update} /><br />
-  <span class="label">Secret:<span class="required" title="required">*</span></span>&nbsp;<input name="secret" type="text" size="75" maxlength="200" value="{$secret}"{$lti2} /><br />
+  <span class="label">LTI version:</span>&nbsp;<select name="ltiversion" id="id_ltiversion" onchange="onVersionChange(this);">
+    <option value="{$v1}"{$v1Selected}>1.0/1.1/1.2/2.0</option>
+    <option value="{$v1p3}"{$v1p3Selected}>1.3</option>
+  </select><br />
+  <br />
+  <span class="label">Name:<span class="required" title="required">*</span></span>&nbsp;<input name="name" type="text" size="50" maxlength="50" value="{$name}" /><br /><br />
+  <span id="id_key"><span class="label">Key:</span>&nbsp;<input name="key" type="text" size="75" maxlength="50" value="{$key}"{$update} /><br /></span>
+  <span id="id_secret"><span class="label">Secret:</span>&nbsp;<input name="secret" type="text" size="75" maxlength="200" value="{$secret}"{$lti2} /><br /></span>
+  <span id="id_platformid"><span class="label">Platform ID:</span>&nbsp;<input name="platformid" type="text" size="75" maxlength="255" value="{$platformId}" /><br /></span>
+  <span id="id_clientid"><span class="label">Client ID:</span>&nbsp;<input name="clientid" type="text" size="75" maxlength="255" value="{$clientId}" /><br /></span>
+  <span id="id_deploymentid"><span class="label">Deployment ID:</span>&nbsp;<input name="deploymentid" type="text" size="75" maxlength="255" value="{$deploymentId}" /><br /></span>
+  <span id="id_authorizationserverid"><span class="label">Authorization server ID:</span>&nbsp;<input name="authorizationserverid" type="text" size="75" maxlength="255" value="{$authorizationServerId}" /><br /></span>
+  <span id="id_authenticationurl"><span class="label">Authentication URL:</span>&nbsp;<input name="authenticationurl" type="text" size="75" maxlength="255" value="{$authenticationUrl}" /><br /></span>
+  <span id="id_accessTokenurl"><span class="label">Access token URL:</span>&nbsp;<input name="accesstokenurl" type="text" size="75" maxlength="255" value="{$accessTokenUrl}" /><br /></span>
+  <span id="id_publickey"><span class="label">Public key:</span>&nbsp;<textarea name="publickey" rows="9" cols="65">{$publicKey}</textarea><br /></span>
+  <span id="id_jku"><span class="label">JSON webkey URL (jku):</span>&nbsp;<input name="jku" type="text" size="75" maxlength="255" value="{$jku}" /><br /></span>
+  <br />
   <span class="label">Enabled?</span>&nbsp;<input name="enabled" type="checkbox" value="1"{$enabled} /><br />
-  <span class="label">Enable from:</span>&nbsp;<input name="enable_from" type="text" size="50" maxlength="200" value="{$enable_from}" /><br />
-  <span class="label">Enable until:</span>&nbsp;<input name="enable_until" type="text" size="50" maxlength="200" value="{$enable_until}" /><br />
+  <span class="label">Enable from:</span>&nbsp;<input name="enable_from" type="text" size="50" maxlength="200" value="{$enableFrom}" /><br />
+  <span class="label">Enable until:</span>&nbsp;<input name="enable_until" type="text" size="50" maxlength="200" value="{$enableUntil}" /><br />
   <span class="label">Protected?</span>&nbsp;<input name="protected" type="checkbox" value="1"{$protected} /><br />
-  <span class="label">Properties:</span>&nbsp;<textarea name="properties" rows="3" cols="65">{$properties}</textarea><br />
+  <span id="id_properties"><span class="label">Properties:</span>&nbsp;<textarea name="properties" rows="3" cols="65">{$properties}</textarea><br /></span>
+  <span class="label">Debug mode?</span>&nbsp;<input name="debug" type="checkbox" value="1"{$debug} /><br />
   <br />
   <input type="hidden" name="do" value="add" />
   <input type="hidden" name="id" value="{$id}" />
-  <span class="label"><span class="required" title="required">*</span>&nbsp;=&nbsp;required field</span>&nbsp;<input type="submit" value="{$mode} consumer" />
+  <span class="label"><span class="required" title="required">*</span>&nbsp;=&nbsp;required field</span>&nbsp;<input type="submit" value="{$mode} platform" />
 
 EOD;
 
-    if (isset($update_consumer->created)) {
+    if (isset($updatePlatform->created)) {
         $page .= <<< EOD
   &nbsp;<input type="reset" value="Cancel" onclick="location.href='./';" />
 
@@ -329,7 +474,7 @@ EOD;
     $page .= <<< EOD
 </div>
 <p class="clear">
-NB The launch URL for this instance is {$launchUrl}
+NB The launch URL, initiate login URL and redirection URI for this instance are all <strong>{$launchUrl}</strong>, and the public keyset URL is <strong>{$jwksUrl}</strong>
 </p>
 </form>
 

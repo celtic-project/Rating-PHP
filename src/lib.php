@@ -10,7 +10,7 @@ use ceLTIc\LTI\ApiHook\ApiHook;
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   3.2.0
+ * @version   4.0.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 require_once('db.php');
@@ -20,16 +20,16 @@ require_once('rating_tp.php');
 //  error_reporting(E_ALL);
 
 LTI\ResourceLink::registerApiHook(ApiHook::$MEMBERSHIPS_SERVICE_HOOK, 'moodle', 'ceLTIc\LTI\ApiHook\moodle\MoodleApiResourceLink');
-LTI\ToolProvider::registerApiHook(ApiHook::$USER_ID_HOOK, 'canvas', 'ceLTIc\LTI\ApiHook\canvas\CanvasApiToolProvider');
+LTI\Tool::registerApiHook(ApiHook::$USER_ID_HOOK, 'canvas', 'ceLTIc\LTI\ApiHook\canvas\CanvasApiTool');
 LTI\ResourceLink::registerApiHook(ApiHook::$MEMBERSHIPS_SERVICE_HOOK, 'canvas', 'ceLTIc\LTI\ApiHook\canvas\CanvasApiResourceLink');
 
 ###
 ###  Initialise application session and database connection
 ###
 
-function init(&$db, $checkSession = NULL)
+function init(&$db, $checkSession = null)
 {
-    $ok = TRUE;
+    $ok = true;
 
 // Set timezone
     if (!ini_get('date.timezone')) {
@@ -41,6 +41,9 @@ function init(&$db, $checkSession = NULL)
 
 // Set the logging level
     Util::$logLevel = Util::LOGLEVEL_ERROR;
+
+// Set the default tool
+    LTI\Tool::$defaultTool = new RatingTool(null);
 
 // Open session
     session_name(SESSION_NAME);
@@ -56,7 +59,7 @@ function init(&$db, $checkSession = NULL)
     } else {
 // Open database connection
         $db = open_db(!$checkSession);
-        $ok = $db !== FALSE;
+        $ok = $db !== false;
         if (!$ok) {
             if (!is_null($checkSession) && $checkSession) {
 // Display a more user-friendly error message to LTI users
@@ -78,7 +81,7 @@ function init(&$db, $checkSession = NULL)
 ###  Return the number of items to be rated for a specified resource link
 ###
 
-function getNumItems($db, $resource_pk)
+function getNumItems($db, $resourcePk)
 {
     $prefix = DB_TABLENAME_PREFIX;
     $sql = <<< EOD
@@ -88,11 +91,11 @@ WHERE (i.resource_link_pk = :resource_pk)
 EOD;
 
     $query = $db->prepare($sql);
-    $query->bindValue('resource_pk', $resource_pk, PDO::PARAM_INT);
+    $query->bindValue('resource_pk', $resourcePk, PDO::PARAM_INT);
     $query->execute();
 
     $row = $query->fetch(PDO::FETCH_NUM);
-    if ($row === FALSE) {
+    if ($row === false) {
         $num = 0;
     } else {
         $num = intval($row[0]);
@@ -105,7 +108,7 @@ EOD;
 ###  Return an array containing the items for a specified resource link
 ###
 
-function getItems($db, $resource_pk)
+function getItems($db, $resourcePk)
 {
     $prefix = DB_TABLENAME_PREFIX;
     $sql = <<< EOD
@@ -118,11 +121,11 @@ ORDER BY i.sequence
 EOD;
 
     $query = $db->prepare($sql);
-    $query->bindValue('resource_pk', $resource_pk, PDO::PARAM_INT);
+    $query->bindValue('resource_pk', $resourcePk, PDO::PARAM_INT);
     $query->execute();
 
     $rows = $query->fetchAll(PDO::FETCH_CLASS, 'Item');
-    if ($rows === FALSE) {
+    if ($rows === false) {
         $rows = array();
     }
 
@@ -133,7 +136,7 @@ EOD;
 ###  Return an array of ratings made for items for a specified resource link by a specified user
 ###
 
-function getUserRated($db, $resource_pk, $user_pk)
+function getUserRated($db, $resourcePk, $userPk)
 {
     $prefix = DB_TABLENAME_PREFIX;
     $sql = <<< EOD
@@ -143,13 +146,13 @@ WHERE (i.resource_link_pk = :resource_pk) AND (r.user_pk = :user_pk)
 EOD;
 
     $query = $db->prepare($sql);
-    $query->bindValue('resource_pk', $resource_pk, PDO::PARAM_INT);
-    $query->bindValue('user_pk', $user_pk, PDO::PARAM_INT);
+    $query->bindValue('resource_pk', $resourcePk, PDO::PARAM_INT);
+    $query->bindValue('user_pk', $userPk, PDO::PARAM_INT);
     $query->execute();
 
     $rows = $query->fetchAll(PDO::FETCH_OBJ);
     $rated = array();
-    if ($rows !== FALSE) {
+    if ($rows !== false) {
         foreach ($rows as $row) {
             $rated[] = $row->item_pk;
         }
@@ -162,11 +165,11 @@ EOD;
 ###  Return details for a specific item for a specified resource link
 ###
 
-function getItem($db, $resource_pk, $item_pk)
+function getItem($db, $resourcePk, $itemPk)
 {
     $item = new Item();
 
-    if (!empty($item_pk)) {
+    if (!empty($itemPk)) {
         $prefix = DB_TABLENAME_PREFIX;
         $sql = <<< EOD
 SELECT i.item_pk, i.item_title, i.item_text, i.item_url, i.max_rating mr, i.step st, i.visible vis, i.sequence seq, i.created cr, i.updated upd
@@ -175,13 +178,13 @@ WHERE (i.resource_link_pk = :resource_pk) AND (i.item_pk = :item_pk)
 EOD;
 
         $query = $db->prepare($sql);
-        $query->bindValue('resource_pk', $resource_pk, PDO::PARAM_INT);
-        $query->bindValue('item_pk', $item_pk, PDO::PARAM_INT);
+        $query->bindValue('resource_pk', $resourcePk, PDO::PARAM_INT);
+        $query->bindValue('item_pk', $itemPk, PDO::PARAM_INT);
         $query->setFetchMode(PDO::FETCH_CLASS, 'Item');
         $query->execute();
 
         $row = $query->fetch();
-        if ($row !== FALSE) {
+        if ($row !== false) {
             $item = $row;
         }
     }
@@ -193,7 +196,7 @@ EOD;
 ###  Save the details for an item for a specified resource link
 ###
 
-function saveItem($db, $resource_pk, $item)
+function saveItem($db, $resourcePk, $item)
 {
     $prefix = DB_TABLENAME_PREFIX;
     if (!isset($item->item_pk)) {
@@ -213,7 +216,7 @@ EOD;
     $item->updated = new DateTime();
     if (!isset($item->item_pk)) {
         $item->created = $item->updated;
-        $item->sequence = getNumItems($db, $resource_pk) + 1;
+        $item->sequence = getNumItems($db, $resourcePk) + 1;
         $query->bindValue('created', $item->created->format('Y-m-d H:i:s'), PDO::PARAM_STR);
     } else {
         $query->bindValue('item_pk', $item->item_pk, PDO::PARAM_INT);
@@ -226,7 +229,8 @@ EOD;
     $query->bindValue('visible', $item->visible, PDO::PARAM_INT);
     $query->bindValue('sequence', $item->sequence, PDO::PARAM_INT);
     $query->bindValue('updated', $item->updated->format('Y-m-d H:i:s'), PDO::PARAM_STR);
-    $query->bindValue('resource_pk', $resource_pk, PDO::PARAM_INT);
+    $query->bindValue('resource_pk', $resourcePk, PDO::PARAM_INT);
+
     $ok = $query->execute();
 
     if ($ok && !isset($item->item_pk)) {
@@ -240,7 +244,7 @@ EOD;
 ###  Delete the ratings for an item
 ###
 
-function deleteRatings($db, $item_pk)
+function deleteRatings($db, $itemPk)
 {
     $prefix = DB_TABLENAME_PREFIX;
     $sql = <<< EOD
@@ -249,7 +253,7 @@ WHERE item_pk = :item_pk
 EOD;
 
     $query = $db->prepare($sql);
-    $query->bindValue('item_pk', $item_pk, PDO::PARAM_INT);
+    $query->bindValue('item_pk', $itemPk, PDO::PARAM_INT);
     $query->execute();
 }
 
@@ -257,13 +261,13 @@ EOD;
 ###  Delete a specific item for a specified resource link including any related ratings
 ###
 
-function deleteItem($db, $resource_pk, $item_pk)
+function deleteItem($db, $resourcePk, $itemPk)
 {
 // Update order for other items for the same resource link
-    reorderItem($db, $resource_pk, $item_pk, 0);
+    reorderItem($db, $resourcePk, $itemPk, 0);
 
 // Delete any ratings
-    deleteRatings($db, $item_pk);
+    deleteRatings($db, $itemPk);
 
 // Delete the item
     $prefix = DB_TABLENAME_PREFIX;
@@ -273,8 +277,8 @@ WHERE (item_pk = :item_pk) AND (resource_link_pk = :resource_pk)
 EOD;
 
     $query = $db->prepare($sql);
-    $query->bindValue('item_pk', $item_pk, PDO::PARAM_INT);
-    $query->bindValue('resource_pk', $resource_pk, PDO::PARAM_STR);
+    $query->bindValue('item_pk', $itemPk, PDO::PARAM_INT);
+    $query->bindValue('resource_pk', $resourcePk, PDO::PARAM_STR);
     $ok = $query->execute();
 
     return $ok;
@@ -284,9 +288,9 @@ EOD;
 ###  Change the position of an item in the list displayed for the resource link
 ###
 
-function reorderItem($db, $resource_pk, $item_pk, $new_pos)
+function reorderItem($db, $resourcePk, $itemPk, $new_pos)
 {
-    $item = getItem($db, $resource_pk, $item_pk);
+    $item = getItem($db, $resourcePk, $itemPk);
 
     $ok = !empty($item->item_pk);
     if ($ok) {
@@ -316,7 +320,7 @@ EOD;
         }
 
         $query = $db->prepare($sql);
-        $query->bindValue('resource_pk', $resource_pk, PDO::PARAM_INT);
+        $query->bindValue('resource_pk', $resourcePk, PDO::PARAM_INT);
         $query->bindValue('old_pos', $old_pos, PDO::PARAM_INT);
         if ($new_pos > 0) {
             $query->bindValue('new_pos', $new_pos, PDO::PARAM_INT);
@@ -326,7 +330,7 @@ EOD;
 
         if ($ok && ($new_pos > 0)) {
             $item->sequence = $new_pos;
-            $ok = saveItem($db, $resource_pk, $item);
+            $ok = saveItem($db, $resourcePk, $item);
         }
     }
 
@@ -337,7 +341,7 @@ EOD;
 ###  Delete all the ratings for an resource link
 ###
 
-function deleteAllRatings($db, $resource_pk)
+function deleteAllRatings($db, $resourcePk)
 {
     $prefix = DB_TABLENAME_PREFIX;
     $sql = <<< EOD
@@ -346,7 +350,7 @@ WHERE resource_link_pk = :resource_pk
 EOD;
 
     $query = $db->prepare($sql);
-    $query->bindValue('resource_pk', $resource_pk, PDO::PARAM_INT);
+    $query->bindValue('resource_pk', $resourcePk, PDO::PARAM_INT);
     $query->execute();
 }
 
@@ -354,10 +358,10 @@ EOD;
 ###  Delete all items for a specified resource link including any related ratings
 ###
 
-function deleteAllItems($db, $resource_pk)
+function deleteAllItems($db, $resourcePk)
 {
 // Delete any ratings
-    deleteAllRatings($db, $resource_pk);
+    deleteAllRatings($db, $resourcePk);
 
 // Delete the items
     $prefix = DB_TABLENAME_PREFIX;
@@ -367,7 +371,7 @@ WHERE (resource_link_pk = :resource_pk)
 EOD;
 
     $query = $db->prepare($sql);
-    $query->bindValue('resource_pk', $resource_pk, PDO::PARAM_STR);
+    $query->bindValue('resource_pk', $resourcePk, PDO::PARAM_STR);
     $ok = $query->execute();
 
     return $ok;
@@ -377,7 +381,7 @@ EOD;
 ###  Save the rating for an item for a specified user
 ###
 
-function saveRating($db, $user_pk, $item_pk, $rating)
+function saveRating($db, $userPk, $itemPk, $rating)
 {
     $prefix = DB_TABLENAME_PREFIX;
     $sql = <<< EOD
@@ -386,8 +390,8 @@ VALUES (:item_pk, :user_pk, :rating)
 EOD;
 
     $query = $db->prepare($sql);
-    $query->bindValue('item_pk', $item_pk, PDO::PARAM_INT);
-    $query->bindValue('user_pk', $user_pk, PDO::PARAM_INT);
+    $query->bindValue('item_pk', $itemPk, PDO::PARAM_INT);
+    $query->bindValue('user_pk', $userPk, PDO::PARAM_INT);
     $query->bindValue('rating', $rating);
 
     $ok = $query->execute();
@@ -399,42 +403,43 @@ EOD;
 ###  Update the gradebook with proportion of visible items which have been rated by each user
 ###
 
-function updateGradebook($db, $user_resource_pk = NULL, $user_user_pk = NULL, $item = NULL, $rating = NULL)
+function updateGradebook($db, $userResourcePk = null, $userUserPk = null, $item = null, $rating = null)
 {
-    $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-    $resource_link = LTI\ResourceLink::fromRecordId($_SESSION['resource_pk'], $data_connector);
+    $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+    $resourceLink = LTI\ResourceLink::fromRecordId($_SESSION['resource_pk'], $dataConnector);
 
     $num = getVisibleItemsCount($db, $_SESSION['resource_pk']);
     $ratings = getVisibleRatingsCounts($db, $_SESSION['resource_pk']);
-    $users = $resource_link->getUserResultSourcedIDs();
+    $users = $resourceLink->getUserResultSourcedIDs();
     foreach ($users as $user) {
-        $resource_pk = $user->getResourceLink()->getRecordId();
-        $user_pk = $user->getRecordId();
-        $update = is_null($user_resource_pk) || is_null($user_user_pk) || (($user_resource_pk === $resource_pk) && ($user_user_pk === $user_pk));
+        $resourcePk = $user->getResourceLink()->getRecordId();
+        $userPk = $user->getRecordId();
+        $update = is_null($userResourcePk) || is_null($userUserPk) || (($userResourcePk === $resourcePk) && ($userUserPk === $userPk));
         if ($update) {
             if ($num > 0) {
                 $count = 0;
-                if (isset($ratings[$resource_pk]) && isset($ratings[$resource_pk][$user_pk])) {
-                    $count = $ratings[$resource_pk][$user_pk];
+                if (isset($ratings[$resourcePk]) && isset($ratings[$resourcePk][$userPk])) {
+                    $count = $ratings[$resourcePk][$userPk];
                 }
-                $lti_outcome = new LTI\Outcome(strval($count / $num));
-                $resource_link->doOutcomesService(LTI\ResourceLink::EXT_WRITE, $lti_outcome, $user);
+                $ltiOutcome = new LTI\Outcome($count, $num);
+                $ltiOutcome->comment = "{$count} items rated out of {$num}.";
+                $resourceLink->doOutcomesService(LTI\ResourceLink::EXT_WRITE, $ltiOutcome, $user);
             } else {
-                $lti_outcome = new LTI\Outcome();
-                $resource_link->doOutcomesService(LTI\ResourceLink::EXT_DELETE, $lti_outcome, $user);
+                $ltiOutcome = new LTI\Outcome();
+                $resourceLink->doOutcomesService(LTI\ResourceLink::EXT_DELETE, $ltiOutcome, $user);
             }
         }
     }
-    if (!empty($user_resource_pk) && !empty($user_user_pk) && !empty($item) && !empty($rating)) {
-        if ($user_resource_pk !== $_SESSION['resource_pk']) {
-            $resource_link = LTI\ResourceLink::fromRecordId($user_resource_pk, $data_connector);
+    if (!empty($userResourcePk) && !empty($userUserPk) && !empty($item) && !empty($rating)) {
+        if ($userResourcePk !== $_SESSION['resource_pk']) {
+            $resourceLink = LTI\ResourceLink::fromRecordId($userResourcePk, $dataConnector);
         }
-        if ($resource_link->hasLineItemService()) {
-            $line_items = $resource_link->getLineItems(strval($item->item_pk));
-            if (!empty($line_items)) {
-                $user = LTI\UserResult::fromRecordId($user_user_pk, $data_connector);
+        if ($resourceLink->hasLineItemService()) {
+            $lineItems = $resourceLink->getLineItems(strval($item->item_pk));
+            if (!empty($lineItems)) {
+                $user = LTI\UserResult::fromRecordId($userUserPk, $dataConnector);
                 $outcome = new LTI\Outcome($rating, $item->max_rating);
-                $line_items[0]->submitOutcome($outcome, $user);
+                $lineItems[0]->submitOutcome($outcome, $user);
             }
         }
     }
@@ -444,7 +449,7 @@ function updateGradebook($db, $user_resource_pk = NULL, $user_user_pk = NULL, $i
 ###  Return a count of visible items for a specified resource link
 ###
 
-function getVisibleItemsCount($db, $resource_pk)
+function getVisibleItemsCount($db, $resourcePk)
 {
     $prefix = DB_TABLENAME_PREFIX;
     $sql = <<< EOD
@@ -454,11 +459,11 @@ WHERE (i.resource_link_pk = :resource_pk) AND (i.visible = 1)
 EOD;
 
     $query = $db->prepare($sql);
-    $query->bindValue('resource_pk', $resource_pk, PDO::PARAM_STR);
+    $query->bindValue('resource_pk', $resourcePk, PDO::PARAM_STR);
     $query->execute();
 
     $row = $query->fetch(PDO::FETCH_NUM);
-    if ($row === FALSE) {
+    if ($row === false) {
         $num = 0;
     } else {
         $num = intval($row[0]);
@@ -471,24 +476,24 @@ EOD;
 ###  Return a count of visible ratings made for items for a specified resource link by each user
 ###
 
-function getVisibleRatingsCounts($db, $resource_pk)
+function getVisibleRatingsCounts($db, $resourcePk)
 {
     $prefix = DB_TABLENAME_PREFIX;
-    $user_table_name = DataConnector\DataConnector::USER_RESULT_TABLE_NAME;
+    $userTableName = DataConnector\DataConnector::USER_RESULT_TABLE_NAME;
     $sql = <<< EOD
 SELECT u.resource_link_pk, r.user_pk, COUNT(r.item_pk) count
 FROM {$prefix}item i INNER JOIN {$prefix}rating r ON i.item_pk = r.item_pk
-  INNER JOIN {$prefix}{$user_table_name} u ON r.user_pk = u.user_result_pk
+  INNER JOIN {$prefix}{$userTableName} u ON r.user_pk = u.user_result_pk
 WHERE (i.resource_link_pk = :resource_pk) AND (i.visible = 1)
 GROUP BY u.resource_link_pk, r.user_pk
 EOD;
     $query = $db->prepare($sql);
-    $query->bindValue('resource_pk', $resource_pk, PDO::PARAM_STR);
+    $query->bindValue('resource_pk', $resourcePk, PDO::PARAM_STR);
     $query->execute();
 
     $rows = $query->fetchAll(PDO::FETCH_OBJ);
     $ratings = array();
-    if ($rows !== FALSE) {
+    if ($rows !== false) {
         foreach ($rows as $row) {
             $ratings[$row->resource_link_pk][$row->user_pk] = $row->count;
         }
@@ -501,7 +506,7 @@ EOD;
 ###  Return an array containing all the ratings for a specific user
 ###
 
-function getUserSummary($db, $user_consumer_pk, $user_pk)
+function getUserSummary($db, $userConsumerPk, $userPk)
 {
     $prefix = DB_TABLENAME_PREFIX;
     $sql = <<< EOD
@@ -512,12 +517,12 @@ WHERE r.consumer_pk = :consumer_pk AND r.user_pk = :user_pk
 EOD;
 
     $query = $db->prepare($sql);
-    $query->bindValue('consumer_pk', $user_consumer_pk, PDO::PARAM_INT);
-    $query->bindValue('user_pk', $user_pk, PDO::PARAM_STR);
+    $query->bindValue('consumer_pk', $userConsumerPk, PDO::PARAM_INT);
+    $query->bindValue('user_pk', $userPk, PDO::PARAM_STR);
     $query->execute();
 
     $rows = $query->fetchAll(PDO::FETCH_OBJ);
-    if ($rows === FALSE) {
+    if ($rows === false) {
         $rows = array();
     }
 
@@ -528,24 +533,24 @@ EOD;
 ###  Return an array containing all of a user's ratings for a specific context
 ###
 
-function getUserRatings($db, $context_pk, $user_pk)
+function getUserRatings($db, $contextPk, $userPk)
 {
     $prefix = DB_TABLENAME_PREFIX;
-    $resource_link_table_name = DataConnector\DataConnector::RESOURCE_LINK_TABLE_NAME;
+    $resourceLinkTableName = DataConnector\DataConnector::RESOURCE_LINK_TABLE_NAME;
     $sql = <<< EOD
 SELECT rl.resource_link_pk, i.max_rating, r.rating
-FROM {$prefix}{$resource_link_table_name} rl INNER JOIN  {$prefix}item i ON rl.resource_link_pk = i.resource_link_pk
+FROM {$prefix}{$resourceLinkTableName} rl INNER JOIN  {$prefix}item i ON rl.resource_link_pk = i.resource_link_pk
   INNER JOIN {$prefix}rating r ON i.item_pk = r.item_pk
 WHERE rl.context_pk = :context_pk AND r.user_pk = :user_pk
 EOD;
 
     $query = $db->prepare($sql);
-    $query->bindValue('context_pk', $context_pk, PDO::PARAM_INT);
-    $query->bindValue('user_pk', $user_pk, PDO::PARAM_INT);
+    $query->bindValue('context_pk', $contextPk, PDO::PARAM_INT);
+    $query->bindValue('user_pk', $userPk, PDO::PARAM_INT);
     $query->execute();
 
     $rows = $query->fetchAll(PDO::FETCH_OBJ);
-    if ($rows === FALSE) {
+    if ($rows === false) {
         $rows = array();
     }
 
@@ -556,23 +561,23 @@ EOD;
 ###  Return an array containing all ratings for a specific context
 ###
 
-function getContextRatings($db, $context_pk)
+function getContextRatings($db, $contextPk)
 {
     $prefix = DB_TABLENAME_PREFIX;
-    $resource_link_table_name = DataConnector\DataConnector::RESOURCE_LINK_TABLE_NAME;
+    $resourceLinkTableName = DataConnector\DataConnector::RESOURCE_LINK_TABLE_NAME;
     $sql = <<< EOD
 SELECT rl.resource_link_pk title, i.max_rating, r.rating
-FROM {$prefix}{$resource_link_table_name} rl INNER JOIN {$prefix}item i ON rl.resource_link_pk = i.resource_link_pk
+FROM {$prefix}{$resourceLinkTableName} rl INNER JOIN {$prefix}item i ON rl.resource_link_pk = i.resource_link_pk
   INNER JOIN {$prefix}rating r ON i.item_pk = r.item_pk
 WHERE rl.context_pk = :context_pk
 EOD;
 
     $query = $db->prepare($sql);
-    $query->bindValue('context_pk', $context_pk, PDO::PARAM_INT);
+    $query->bindValue('context_pk', $contextPk, PDO::PARAM_INT);
     $query->execute();
 
     $rows = $query->fetchAll(PDO::FETCH_OBJ);
-    if ($rows === FALSE) {
+    if ($rows === false) {
         $rows = array();
     }
 
@@ -638,7 +643,7 @@ function floatToStr($num)
 ###  Return the value of a POST parameter
 ###
 
-function postValue($name, $defaultValue = NULL)
+function postValue($name, $defaultValue = null)
 {
     $value = $defaultValue;
     if (isset($_POST[$name])) {
@@ -668,11 +673,11 @@ function getGuid()
     return sprintf('%04x%04x-%04x-%04x-%02x%02x-%04x%04x%04x', mt_rand(0, 65535), mt_rand(0, 65535), // 32 bits for "time_low"
         mt_rand(0, 65535), // 16 bits for "time_mid"
         mt_rand(0, 4096) + 16384, // 16 bits for "time_hi_and_version", with
-        // the most significant 4 bits being 0100
-        // to indicate randomly generated version
+// the most significant 4 bits being 0100
+// to indicate randomly generated version
         mt_rand(0, 64) + 128, // 8 bits  for "clock_seq_hi", with
-        // the most significant 2 bits being 10,
-        // required by version 4 GUIDs.
+// the most significant 2 bits being 10,
+// required by version 4 GUIDs.
         mt_rand(0, 256), // 8 bits  for "clock_seq_low"
         mt_rand(0, 65535), // 16 bits for "node 0" and "node 1"
         mt_rand(0, 65535), // 16 bits for "node 2" and "node 3"
@@ -686,16 +691,17 @@ function getGuid()
 
 class Item
 {
-    public $item_pk = NULL;
+
+    public $item_pk = null;
     public $item_title = '';
     public $item_text = '';
     public $item_url = '';
     public $max_rating = 3;
     public $step = 1;
-    public $visible = FALSE;
+    public $visible = false;
     public $sequence = 0;
-    public $created = NULL;
-    public $updated = NULL;
+    public $created = null;
+    public $updated = null;
     public $num_ratings = 0;
     public $tot_ratings = 0;
 

@@ -3,11 +3,11 @@
 use ceLTIc\LTI\DataConnector;
 
 /**
- * This page processes a launch request from an LTI tool consumer.
+ * This page processes a launch request from an LTI platform.
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   3.2.0
+ * @version   4.0.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 require_once('rating_tp.php');
@@ -19,15 +19,15 @@ $_SESSION = array();
 session_destroy();
 
 // Initialise database
-$db = NULL;
+$db = null;
 if (init($db)) {
-    $data_connector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-    $tool = new RatingToolProvider($data_connector);
-    $tool->setParameterConstraint('resource_link_id', TRUE, 50, array('basic-lti-launch-request'));
-    $tool->setParameterConstraint('user_id', TRUE, 50, array('basic-lti-launch-request'));
-    $tool->setParameterConstraint('roles', TRUE, NULL, array('basic-lti-launch-request'));
+    $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+    $tool = new RatingTool($dataConnector);
+    $tool->setParameterConstraint('resource_link_id', true, 50, array('basic-lti-launch-request'));
+    $tool->setParameterConstraint('user_id', true, 50, array('basic-lti-launch-request'));
+    $tool->setParameterConstraint('roles', true, null, array('basic-lti-launch-request'));
 } else {
-    $tool = new RatingToolProvider(NULL);
+    $tool = new RatingTool(null);
     $tool->reason = $_SESSION['error_message'];
 }
 $tool->handleRequest();
