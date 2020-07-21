@@ -214,11 +214,9 @@ function toggleSelect(el) {
 
 function onVersionChange(el) {
   if (el.selectedIndex <= 0) {
-//    document.getElementById('id_keylabel').innerHTML = 'Key:';
     displayv1 = 'block';
     displayv1p3 = 'none';
   } else {
-//    document.getElementById('id_keylabel').innerHTML = 'Client ID:';
     displayv1 = 'none';
     displayv1p3 = 'block';
   }
@@ -229,7 +227,7 @@ function onVersionChange(el) {
   document.getElementById('id_deploymentid').style.display = displayv1p3;
   document.getElementById('id_authorizationserverid').style.display = displayv1p3;
   document.getElementById('id_authenticationurl').style.display = displayv1p3;
-  document.getElementById('id_accessTokenurl').style.display = displayv1p3;
+  document.getElementById('id_accesstokenurl').style.display = displayv1p3;
   document.getElementById('id_publickey').style.display = displayv1p3;
   document.getElementById('id_jku').style.display = displayv1p3;
 }
@@ -447,8 +445,8 @@ EOD;
   <span id="id_clientid"><span class="label">Client ID:</span>&nbsp;<input name="clientid" type="text" size="75" maxlength="255" value="{$clientId}" /><br /></span>
   <span id="id_deploymentid"><span class="label">Deployment ID:</span>&nbsp;<input name="deploymentid" type="text" size="75" maxlength="255" value="{$deploymentId}" /><br /></span>
   <span id="id_authorizationserverid"><span class="label">Authorization server ID:</span>&nbsp;<input name="authorizationserverid" type="text" size="75" maxlength="255" value="{$authorizationServerId}" /><br /></span>
-  <span id="id_authenticationurl"><span class="label">Authentication URL:</span>&nbsp;<input name="authenticationurl" type="text" size="75" maxlength="255" value="{$authenticationUrl}" /><br /></span>
-  <span id="id_accessTokenurl"><span class="label">Access token URL:</span>&nbsp;<input name="accesstokenurl" type="text" size="75" maxlength="255" value="{$accessTokenUrl}" /><br /></span>
+  <span id="id_authenticationurl"><span class="label">Authentication request URL:</span>&nbsp;<input name="authenticationurl" type="text" size="75" maxlength="255" value="{$authenticationUrl}" /><br /></span>
+  <span id="id_accesstokenurl"><span class="label">Access token URL:</span>&nbsp;<input name="accesstokenurl" type="text" size="75" maxlength="255" value="{$accessTokenUrl}" /><br /></span>
   <span id="id_publickey"><span class="label">Public key:</span>&nbsp;<textarea name="publickey" rows="9" cols="65">{$publicKey}</textarea><br /></span>
   <span id="id_jku"><span class="label">JSON webkey URL (jku):</span>&nbsp;<input name="jku" type="text" size="75" maxlength="255" value="{$jku}" /><br /></span>
   <br />

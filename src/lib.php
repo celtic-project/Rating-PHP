@@ -140,7 +140,7 @@ function getUserRated($db, $resourcePk, $userPk)
 {
     $prefix = DB_TABLENAME_PREFIX;
     $sql = <<< EOD
-SELECT r.item_pk
+SELECT r.item_pk, r.rating
 FROM {$prefix}item i INNER JOIN {$prefix}rating r ON i.item_pk = r.item_pk
 WHERE (i.resource_link_pk = :resource_pk) AND (r.user_pk = :user_pk)
 EOD;
@@ -154,7 +154,7 @@ EOD;
     $rated = array();
     if ($rows !== false) {
         foreach ($rows as $row) {
-            $rated[] = $row->item_pk;
+            $rated[$row->item_pk] = $row->rating;
         }
     }
 
@@ -400,6 +400,66 @@ EOD;
 }
 
 ###
+###  Create/update the line item for this item
+###
+
+function saveLineItem($resourceLink, $item, $isNew)
+{
+    if ($resourceLink->hasLineItemService()) {
+        $resourceId = strval($item->item_pk);
+        $label = "Rating: {$item->item_title}";
+        $tag = 'Rating';
+        $pointsPossible = $item->max_rating;
+        $visible = $item->visible;
+        if (!$isNew) {
+            $lineItems = $resourceLink->getLineItems($resourceId);
+            $isNew = empty($lineItems);
+        }
+        if (!$isNew) {
+            $lineItem = reset($lineItems);
+            if (!$visible) {
+                $lineItem->delete();
+            } else if (($lineItem->label !== $label) || ($lineItem->tag !== $tag) || ($lineItem->pointsPossible !== $pointsPossible)) {
+                $lineItem->label = $label;
+                $lineItem->tag = $tag;
+                $lineItem->pointsPossible = $pointsPossible;
+                $lineItem->save();
+            }
+        } else if ($visible) {
+            $lineItem = new LTI\LineItem($resourceLink->getPlatform(), $label, $pointsPossible);
+            $lineItem->resourceId = $resourceId;
+            $lineItem->tag = $tag;
+            $resourceLink->createLineItem($lineItem);
+        }
+    }
+}
+
+###
+###  Create/update the outcomes in the line item associated with this item
+###
+
+function updateLineItemOutcomes($resourceLink, $item)
+{
+    global $db;
+
+    if ($resourceLink->hasLineItemService()) {
+        $id = strval($item->item_pk);
+        $lineItems = $resourceLink->getLineItems($id);
+        if (!empty($lineItems)) {
+            $lineItem = $lineItems[0];
+            $users = $resourceLink->getUserResultSourcedIDs();
+            foreach ($users as $user) {
+                $userRated = getUserRated($db, $resourceLink->getRecordId(), $user->getRecordId());
+                if (array_key_exists($id, $userRated)) {
+                    $outcome = new LTI\Outcome($userRated[$id], $item->max_rating);
+                    $lineItem->submitOutcome($outcome, $user);
+                }
+            }
+        }
+    }
+}
+
+###
 ###  Update the gradebook with proportion of visible items which have been rated by each user
 ###
 
@@ -422,7 +482,12 @@ function updateGradebook($db, $userResourcePk = null, $userUserPk = null, $item 
                     $count = $ratings[$resourcePk][$userPk];
                 }
                 $ltiOutcome = new LTI\Outcome($count, $num);
-                $ltiOutcome->comment = "{$count} items rated out of {$num}.";
+                if ($count === 1) {
+                    $item = 'item';
+                } else {
+                    $item = 'items';
+                }
+                $ltiOutcome->comment = "{$count} {$item} rated out of {$num}.";
                 $resourceLink->doOutcomesService(LTI\ResourceLink::EXT_WRITE, $ltiOutcome, $user);
             } else {
                 $ltiOutcome = new LTI\Outcome();
@@ -495,7 +560,7 @@ EOD;
     $ratings = array();
     if ($rows !== false) {
         foreach ($rows as $row) {
-            $ratings[$row->resource_link_pk][$row->user_pk] = $row->count;
+            $ratings[$row->resource_link_pk][$row->user_pk] = intval($row->count);
         }
     }
 
@@ -590,13 +655,20 @@ EOD;
 
 function getAppPath()
 {
-    $root = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
-    if (substr($root, -1) === '/') {  // remove any trailing / which should not be there
-        $root = substr($root, 0, -1);
-    }
-    $dir = str_replace('\\', '/', dirname(__FILE__));
+    if (empty($_SERVER['CONTEXT_PREFIX'])) {
+        $root = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+        if (substr($root, -1) === '/') {  // remove any trailing / which should not be there
+            $root = substr($root, 0, -1);
+        }
+        $dir = str_replace('\\', '/', dirname(__FILE__));
 
-    $path = str_replace($root, '', $dir) . '/';
+        $path = str_replace($root, '', $dir) . '/';
+    } else {
+        $path = $_SERVER['CONTEXT_PREFIX'];
+        if (substr($path, -1) !== '/') {
+            $path .= '/';
+        }
+    }
 
     return $path;
 }

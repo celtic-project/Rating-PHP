@@ -61,9 +61,9 @@ function init_db($db)
             'name varchar(50) NOT NULL, ' .
             'consumer_key varchar(256) DEFAULT NULL, ' .
             'secret varchar(1024) DEFAULT NULL, ' .
-            'platform_id VARCHAR(255) DEFAULT NULL, ' .
-            'client_id VARCHAR(255) DEFAULT NULL, ' .
-            'deployment_id VARCHAR(255) DEFAULT NULL, ' .
+            'platform_id varchar(255) DEFAULT NULL, ' .
+            'client_id varchar(255) DEFAULT NULL, ' .
+            'deployment_id varchar(255) DEFAULT NULL, ' .
             'public_key text DEFAULT NULL, ' .
             'lti_version varchar(10) DEFAULT NULL, ' .
             'signature_method varchar(15) DEFAULT NULL, ' .

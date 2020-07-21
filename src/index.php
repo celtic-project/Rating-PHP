@@ -56,14 +56,12 @@ if ($ok) {
             if ($ok) {
                 $_SESSION['resource_pk'] = $resourceLink->getRecordId();
                 $ok = saveItem($db, $_SESSION['resource_pk'], $updateItem);
+                saveLineItem($resourceLink, $updateItem, empty($id));
+                if (!empty($id) && $updateItem->visible && !$wasVisible) {
+                    updateLineItemOutcomes($resourceLink, $updateItem);
+                }
             }
             if ($ok) {
-                if ($resourceLink->hasLineItemService()) {
-                    $lineItem = new LTI\LineItem($platform, "Rating: {$updateItem->item_title}", $updateItem->max_rating);
-                    $lineItem->resourceId = strval($updateItem->item_pk);
-                    $lineItem->tag = 'Rating';
-                    $resourceLink->createLineItem($lineItem);
-                }
                 $_SESSION['message'] = 'The item has been saved.';
                 if (!$_SESSION['isContentItem'] && ($updateItem->visible != $wasVisible)) {
                     updateGradebook($db);
@@ -305,7 +303,7 @@ EOD;
                 $step = 1.0 / $item->step;
                 $value = '0';
                 $readonly = 'true';
-                if ($_SESSION['isStudent'] && !in_array(strval($item->item_pk), $userRated)) {
+                if ($_SESSION['isStudent'] && !array_key_exists(strval($item->item_pk), $userRated)) {
                     $readonly = 'false';
                 } else if ($item->num_ratings > 0) {
                     $value = floatToStr($item->tot_ratings / $item->num_ratings);
@@ -575,7 +573,7 @@ EOD;
     </table>
 
 EOD;
-            if (count($resourceLink->groupSets) > 0) {
+            if (!empty($resourceLink->groupSets)) {
                 $page .= <<< EOD
     <h2>Group sets</h2>
 

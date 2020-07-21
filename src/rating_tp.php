@@ -31,8 +31,8 @@ class RatingTool extends LTI\Tool
         $requiredMessages = array(new Profile\Message('basic-lti-launch-request', 'connect.php', array('User.id', 'Membership.role')));
         $optionalMessages = array(new Profile\Message('ContentItemSelectionRequest', 'connect.php',
                 array('User.id', 'Membership.role')),
-            new Profile\Message('DashboardRequest', 'connect.php', array('User.id'), array('a' => 'User.id'),
-                array('b' => 'User.id')));
+            new Profile\Message('DashboardRequest', 'connect.php', array('User.id'))
+        );
 
         $this->resourceHandlers[] = new Profile\ResourceHandler(
             new Profile\Item('rating', 'Rating app', 'An example tool which generates lists of items for rating.'),
@@ -43,7 +43,11 @@ class RatingTool extends LTI\Tool
         $this->signatureMethod = SIGNATURE_METHOD;
         $this->kid = KID;
         $this->rsaKey = PRIVATE_KEY;
-        $this->requiredScopes = array(LTI\Service\Score::$SCOPE);
+        $this->requiredScopes = array(
+            LTI\Service\LineItem::$SCOPE,
+            LTI\Service\Score::$SCOPE,
+            LTI\Service\Membership::$SCOPE
+        );
     }
 
     function onLaunch()
