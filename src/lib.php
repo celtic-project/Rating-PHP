@@ -483,11 +483,11 @@ function updateGradebook($db, $userResourcePk = null, $userUserPk = null, $item 
                 }
                 $ltiOutcome = new LTI\Outcome($count, $num);
                 if ($count === 1) {
-                    $item = 'item';
+                    $itemDesc = 'item';
                 } else {
-                    $item = 'items';
+                    $itemDesc = 'items';
                 }
-                $ltiOutcome->comment = "{$count} {$item} rated out of {$num}.";
+                $ltiOutcome->comment = "{$count} {$itemDesc} rated out of {$num}.";
                 $resourceLink->doOutcomesService(LTI\ResourceLink::EXT_WRITE, $ltiOutcome, $user);
             } else {
                 $ltiOutcome = new LTI\Outcome();

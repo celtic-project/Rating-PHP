@@ -92,7 +92,7 @@ class RatingTool extends LTI\Tool
             $_SESSION['user_pk'] = null;
             $_SESSION['isStudent'] = false;
             $_SESSION['isContentItem'] = true;
-            $_SESSION['lti_version'] = $_POST['lti_version'];
+            $_SESSION['lti_version'] = $this->platform->ltiVersion;
             $_SESSION['return_url'] = $this->returnUrl;
             $_SESSION['title'] = postValue('title', 'Rating item');
             $_SESSION['text'] = postValue('text');

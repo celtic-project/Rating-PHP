@@ -3,6 +3,7 @@
 use ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector;
 use ceLTIc\LTI\ResourceLink;
+use ceLTIc\LTI\Content;
 
 /**
  * This page displays a list of items for a resource link.  Students are able to rate
@@ -48,7 +49,7 @@ if ($ok) {
             $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
             $platform = LTI\Platform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
             if (is_null($_SESSION['resource_pk'])) {
-                $resourceLink = LTI\ResourceLink::fromConsumer($platform, $_SESSION['resource_id']);
+                $resourceLink = LTI\ResourceLink::fromPlatform($platform, $_SESSION['resource_id']);
                 $ok = $resourceLink->save();
             } else {
                 $resourceLink = LTI\ResourceLink::fromRecordId($_SESSION['resource_pk'], $dataConnector);
@@ -111,22 +112,22 @@ if ($ok) {
             $documentTarget = 'frame';
         }
         if (!empty($documentTarget)) {
-            $placement = new LTI\ContentItemPlacement(null, null, $documentTarget, null);
+            $placement = new Content\Placement($documentTarget);
         }
-        $item = new LTI\ContentItem('LtiLink', $placement);
-        $item->setMediaType(LTI\ContentItem::LTI_LINK_MEDIA_TYPE);
+        $item = new Content\LtiLinkItem($placement);
+        $item->setMediaType(Content\Item::LTI_LINK_MEDIA_TYPE);
         $item->setTitle($_SESSION['title']);
         $item->setText($_SESSION['text']);
-        $item->icon = new LTI\ContentItemImage(getAppUrl() . 'images/icon50.png', 50, 50);
-        $item->custom = array('content_item_id' => $_SESSION['resource_id']);
-        $formParams['content_items'] = LTI\ContentItem::toJson($item);
+        $item->setIcon(new Content\Image(getAppUrl() . 'images/icon50.png', 50, 50));
+        $item->addCustom('content_item_id', $_SESSION['resource_id']);
+        $formParams['content_items'] = Content\Item::toJson($item);
         if (!is_null($_SESSION['data'])) {
             $formParams['data'] = $_SESSION['data'];
         }
         $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-        $platform = LTI\Platform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
-        $formParams = $platform->signParameters($_SESSION['return_url'], 'ContentItemSelection', $_SESSION['lti_version'],
-            $formParams);
+        LTI\Tool::$defaultTool->platform = LTI\Platform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
+        $formParams = LTI\Tool::$defaultTool->signParameters($_SESSION['return_url'], 'ContentItemSelection',
+            $_SESSION['lti_version'], $formParams);
         $page = LTI\Util::sendForm($_SESSION['return_url'], $formParams);
         echo $page;
         exit;
@@ -141,9 +142,9 @@ if ($ok) {
             $formParams['data'] = $_SESSION['data'];
         }
         $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-        $platform = LTI\Platrform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
-        $formParams = $platform->signParameters($_SESSION['return_url'], 'ContentItemSelection', $_SESSION['lti_version'],
-            $formParams);
+        LTI\Tool::$defaultTool->platform = LTI\Platform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
+        $formParams = LTI\Tool::$defaultTool->signParameters($_SESSION['return_url'], 'ContentItemSelection',
+            $_SESSION['lti_version'], $formParams);
         $page = LTI\Util::sendForm($_SESSION['return_url'], $formParams);
         echo $page;
         exit;
@@ -546,19 +547,20 @@ EOD;
 
 EOD;
             $users = array();
-            foreach ($members as $member) {
-                $users["{$member->lastname}, {$member->firstname}"] = $member;
-            }
-            ksort($users);
-            foreach ($users as $name => $user) {
-                if ($user->isLearner()) {
-                    $img = 'tick.gif';
-                    $ratings = count(getUserRated($db, $_SESSION['resource_pk'], $user->getRecordId()));
-                } else {
-                    $img = 'cross.gif';
-                    $ratings = 'NA';
+            if (!empty($members)) {
+                foreach ($members as $member) {
+                    $users["{$member->lastname}, {$member->firstname}"] = $member;
                 }
-                $page .= <<< EOD
+                ksort($users);
+                foreach ($users as $name => $user) {
+                    if ($user->isLearner()) {
+                        $img = 'tick.gif';
+                        $ratings = count(getUserRated($db, $_SESSION['resource_pk'], $user->getRecordId()));
+                    } else {
+                        $img = 'cross.gif';
+                        $ratings = 'NA';
+                    }
+                    $page .= <<< EOD
        <tr>
          <td>{$user->ltiUserId}</td>
          <td>{$name}</td>
@@ -567,6 +569,7 @@ EOD;
        </tr>
 
 EOD;
+                }
             }
             $page .= <<< EOD
     </tbody>
@@ -632,7 +635,7 @@ EOD;
 
 EOD;
         }
-    } else {
+    } else if (!$_SESSION['isContentItem']) {
         $page .= <<< EOD
     Your course does not appear to offer the ability to access a list of users.
 
