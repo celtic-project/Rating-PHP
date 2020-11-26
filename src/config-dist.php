@@ -35,4 +35,10 @@ Insert private key here
 -----END RSA PRIVATE KEY-----
 EOD
 );
+
+###
+###  Registration settings
+###
+define('AUTO_ENABLE', false);
+define('ENABLE_FOR_DAYS', 0);
 ?>

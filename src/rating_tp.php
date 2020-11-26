@@ -1,6 +1,7 @@
 <?php
 
 use ceLTIc\LTI;
+use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\Profile;
 
 /**
@@ -41,6 +42,7 @@ class RatingTool extends LTI\Tool
         $this->requiredServices[] = new Profile\ServiceDefinition(array('application/vnd.ims.lti.v2.toolproxy+json'), array('POST'));
 
         $this->signatureMethod = SIGNATURE_METHOD;
+        $this->jku = getAppUrl() . 'jwks.php';
         $this->kid = KID;
         $this->rsaKey = PRIVATE_KEY;
         $this->requiredScopes = array(
@@ -50,7 +52,7 @@ class RatingTool extends LTI\Tool
         );
     }
 
-    function onLaunch()
+    protected function onLaunch()
     {
 // Check the user has an appropriate role
         if ($this->userResult->isLearner() || $this->userResult->isStaff()) {
@@ -71,7 +73,7 @@ class RatingTool extends LTI\Tool
         }
     }
 
-    function onContentItem()
+    protected function onContentItem()
     {
 // Check that the Platform is allowing the return of an LTI link
         $this->ok = in_array(LTI\ContentItem::LTI_LINK_MEDIA_TYPE, $this->mediaTypes) || in_array('*/*', $this->mediaTypes);
@@ -103,7 +105,7 @@ class RatingTool extends LTI\Tool
         }
     }
 
-    function onDashboard()
+    protected function onDashboard()
     {
         global $db;
 
@@ -203,7 +205,7 @@ EOD;
         }
     }
 
-    function onRegister()
+    protected function onRegister()
     {
 // Initialise the user session
         $_SESSION['consumer_pk'] = $this->platform->getRecordId();
@@ -215,7 +217,99 @@ EOD;
         $this->redirectUrl = getAppUrl() . 'register.php';
     }
 
-    function onError()
+    protected function onRegistration()
+    {
+        if (!defined('AUTO_ENABLE') || !AUTO_ENABLE) {
+            $successMessage = 'Note that the tool must be enabled by the tool provider before it can be used.';
+        } else if (!defined('ENABLE_FOR_DAYS') || (ENABLE_FOR_DAYS <= 0)) {
+            $successMessage = 'The tool has been automatically enabled by the tool provider for immediate use.';
+        } else {
+            $successMessage = 'The tool has been enabled for you to use for the next ' . ENABLE_FOR_DAYS . ' day';
+            if (ENABLE_FOR_DAYS > 1) {
+                $successMessage .= 's';
+            }
+        }
+        $appName = APP_NAME;
+        $html = <<< EOD
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-language" content="EN" />
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <title>LTI Tool registration</title>
+  <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
+  <link href="css/rating.css" media="screen" rel="stylesheet" type="text/css" />
+  <script type="text/javascript">
+    //<![CDATA[
+    function doRegister() {
+      $('#id_continue').addClass('hide');
+      $('#id_loading').removeClass('hide');
+      $.ajax({
+        url: 'registration.php',
+        dataType: 'json',
+        data: {
+          'openid_configuration': '{$_REQUEST['openid_configuration']}',
+          'registration_token': '{$_REQUEST['registration_token']}'
+        },
+        type: 'POST',
+        success: function (response) {
+          $('#id_loading').addClass('hide');
+          if (response.ok) {
+            $('#id_registered').removeClass('hide');
+            $('#id_close').removeClass('hide');
+          } else {
+            $('#id_notregistered').removeClass('hide');
+            if (response.message) {
+                $('#id_reason').text(': ' + response.message);
+            }
+          }
+        },
+        error: function (jxhr, msg, err) {
+          $('#id_loading').addClass('hide');
+          $('#id_reason').text(': Sorry an error occurred; please try again later.');
+        }
+      });
+    }
+
+    function doClose(el) {
+      (window.opener || window.parent).postMessage({subject:'org.imsglobal.lti.close'}, '*');
+      return true;
+    }
+    //]]>
+  </script>
+</head>
+<body>
+  <h1>{$appName} Tool Registration</h1>
+
+  <p>
+    This page allows you to complete a registration with a Moodle LTI 1.3 platform (other platforms will be supported once they offer this facility).
+  </p>
+
+  <p id="id_continue" class="aligncentre">
+    <button type="button" onclick="return doRegister();">Continue</button>
+  </p>
+  <p id="id_loading" class="aligncentre hide">
+    <img src="images/loading.gif">
+  </p>
+
+  <p id="id_registered" class="success hide">
+    The tool registration was successful.  {$successMessage}
+  </p>
+  <p id="id_notregistered" class="error hide">
+    The tool registration failed<span id="id_reason"></span>
+  </p>
+
+  <p class="aligncentre">
+    <button type="button" id="id_close" class="hide" onclick="return doClose(this);">Close</button>
+  </p>
+
+  </body>
+</html>
+EOD;
+        $this->output = $html;
+    }
+
+    protected function onError()
     {
         $msg = $this->message;
         if ($this->debugMode && !empty($this->reason)) {
@@ -241,6 +335,37 @@ EOD;
 </body>
 </html>
 EOD;
+    }
+
+    public function doRegistration()
+    {
+        $platformConfig = $this->getPlatformConfiguration();
+        if ($this->ok) {
+            $toolConfig = $this->getConfiguration($platformConfig);
+            error_log(var_export(json_encode($toolConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), true));
+            $registrationConfig = $this->sendRegistration($platformConfig, $toolConfig);
+            if ($this->ok) {
+                $platform = $this->getPlatformToRegister($platformConfig, $registrationConfig, false);
+                if (defined('AUTO_ENABLE') && AUTO_ENABLE) {
+                    $platform->enabled = true;
+                }
+                if (defined('ENABLE_FOR_DAYS') && (ENABLE_FOR_DAYS > 0)) {
+                    $now = time();
+                    $platform->enableFrom = $now;
+                    $platform->enableUntil = $now + (ENABLE_FOR_DAYS * 24 * 60 * 60);
+                }
+                $this->ok = $platform->save();
+                if (!$this->ok) {
+                    $checkPlatform = Platform::fromPlatformId($platform->platformId, $platform->clientId, $platform->deploymentId,
+                            $this->dataConnector);
+                    if (!empty($checkPlatform->created)) {
+                        $this->reason = 'The platform is already registered.';
+                    } else {
+                        $this->reason = 'Sorry, an error occurred when saving the platform details.';
+                    }
+                }
+            }
+        }
     }
 
 }

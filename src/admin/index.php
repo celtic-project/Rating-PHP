@@ -472,7 +472,7 @@ EOD;
     $page .= <<< EOD
 </div>
 <p class="clear">
-NB The launch URL, initiate login URL and redirection URI for this instance are all <strong>{$launchUrl}</strong>, and the public keyset URL is <strong>{$jwksUrl}</strong>
+NB The launch URL, initiate login URL, redirection URI and registration URL for this instance are all <strong>{$launchUrl}</strong>, and the public keyset URL is <strong>{$jwksUrl}</strong>
 </p>
 </form>
 
