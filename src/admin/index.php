@@ -24,7 +24,7 @@ require_once('../lib.php');
 
 // Initialise session and database
 $db = null;
-$ok = init($db, false);
+$ok = init($db, false, 1);
 // Initialise parameters
 $id = null;
 if ($ok) {
@@ -184,10 +184,10 @@ if ($ok) {
     $platforms = $tool->getPlatforms();
 
 // Set launch URL for information
-    $launchUrl = getAppUrl() . 'connect.php';
+    $launchUrl = getAppUrl(1) . 'connect.php';
 
 // Set launch URL for information
-    $jwksUrl = getAppUrl() . 'jwks.php';
+    $jwksUrl = getAppUrl(1) . 'jwks.php';
 }
 
 // Page header

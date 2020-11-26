@@ -4,6 +4,7 @@ use ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector;
 use ceLTIc\LTI\Util;
 use ceLTIc\LTI\ApiHook\ApiHook;
+use ceLTIc\LTI\OAuth;
 
 /**
  * This page provides general functions to support the application.
@@ -27,9 +28,14 @@ LTI\ResourceLink::registerApiHook(ApiHook::$MEMBERSHIPS_SERVICE_HOOK, 'canvas', 
 ###  Initialise application session and database connection
 ###
 
-function init(&$db, $checkSession = null)
+function init(&$db, $checkSession = null, $currentLevel = 0)
 {
     $ok = true;
+
+// Check if path value passed by web server needs amending
+    if (defined('REQUEST_URI_PREFIX') && !empty(REQUEST_URI_PREFIX)) {
+        $_SERVER['REQUEST_URI'] = REQUEST_URI_PREFIX . $_SERVER['REQUEST_URI'];
+    }
 
 // Set timezone
     if (!ini_get('date.timezone')) {
@@ -37,7 +43,13 @@ function init(&$db, $checkSession = null)
     }
 
 // Set session cookie path
-    ini_set('session.cookie_path', getAppPath());
+    ini_set('session.cookie_path', getAppPath($currentLevel));
+
+// Set samesite value for cookie
+    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+        ini_set('session.cookie_samesite', 'none');
+        ini_set('session.cookie_secure', true);
+    }
 
 // Set the logging level
     Util::$logLevel = Util::LOGLEVEL_ERROR;
@@ -653,45 +665,37 @@ EOD;
 ###  Get the web path to the application
 ###
 
-function getAppPath()
+function getAppPath($currentLevel = 0)
 {
-    if (empty($_SERVER['CONTEXT_PREFIX'])) {
-        $root = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
-        if (substr($root, -1) === '/') {  // remove any trailing / which should not be there
-            $root = substr($root, 0, -1);
-        }
-        $dir = str_replace('\\', '/', dirname(__FILE__));
-
-        $path = str_replace($root, '', $dir) . '/';
-    } else {
-        $path = $_SERVER['CONTEXT_PREFIX'];
-        if (substr($path, -1) !== '/') {
-            $path .= '/';
-        }
+    $path = getAppUrl($currentLevel);
+    $pos = strpos($path, '/', 8);
+    if ($pos !== false) {
+        $path = substr($path, $pos);
     }
 
     return $path;
 }
 
 ###
-###  Get the application domain URL
-###
-
-function getHost()
-{
-    $scheme = (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] != "on") ? 'http' : 'https';
-    $url = $scheme . '://' . $_SERVER['HTTP_HOST'];
-
-    return $url;
-}
-
-###
 ###  Get the URL to the application
 ###
 
-function getAppUrl()
+function getAppUrl($currentLevel = 0)
 {
-    $url = getHost() . getAppPath();
+    $request = OAuth\OAuthRequest::from_request();
+    $url = $request->get_normalized_http_url();
+    for ($i = 1; $i <= $currentLevel; $i++) {
+        $pos = strrpos($url, '/');
+        if ($pos === false) {
+            break;
+        } else {
+            $url = substr($url, 0, $pos);
+        }
+    }
+    $pos = strrpos($url, '/');
+    if ($pos !== false) {
+        $url = substr($url, 0, $pos + 1);
+    }
 
     return $url;
 }

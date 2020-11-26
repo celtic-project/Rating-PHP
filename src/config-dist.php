@@ -21,6 +21,8 @@ define('DB_NAME', '');  // e.g. 'mysql:dbname=MyDb;host=localhost' or 'sqlite:ph
 define('DB_USERNAME', '');
 define('DB_PASSWORD', '');
 define('DB_TABLENAME_PREFIX', '');
+// Specify a prefix (starting with '/') when the REQUEST_URI server variable is missing the first part of the real path
+define('REQUEST_URI_PREFIX', '');
 
 ###
 ###  Security settings
