@@ -4,7 +4,6 @@
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   4.0.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 ###
@@ -12,7 +11,7 @@
 ###
 define('APP_NAME', 'Rating');
 define('SESSION_NAME', 'php-rating');
-define('VERSION', '4.0.0');
+define('VERSION', '4.1.0');
 
 ###
 ###  Database connection settings

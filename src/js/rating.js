@@ -4,7 +4,6 @@
  *
  * @author  Stephen P Vickers <stephen@spvsoftwareproducts.com>
  * @copyright  SPV Software Products
- * @version   4.0.0
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
 
