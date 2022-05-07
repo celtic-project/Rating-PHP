@@ -98,6 +98,8 @@ if ($ok) {
 
 // Process content-item save action
     } else if ($action == 'saveci') {
+        $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+        $platform = LTI\Platform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
 // Pass on preference for overlay, popup, iframe, frame options in that order if any of these is offered
         $placement = null;
         $documentTarget = '';
@@ -119,12 +121,14 @@ if ($ok) {
         $item->setText($_SESSION['text']);
         $item->setIcon(new Content\Image(getAppUrl() . 'images/icon50.png', 50, 50));
         $item->addCustom('content_item_id', $_SESSION['resource_id']);
+        if (strpos($platform->consumerVersion, 'canvas') === 0) {
+            $item->setUrl(getAppUrl() . 'connect.php');
+        }
         $formParams['content_items'] = Content\Item::toJson($item, $_SESSION['lti_version']);
         if (!is_null($_SESSION['data'])) {
             $formParams['data'] = $_SESSION['data'];
         }
-        $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-        LTI\Tool::$defaultTool->platform = LTI\Platform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
+        LTI\Tool::$defaultTool->platform = $platform;
         $formParams = LTI\Tool::$defaultTool->signParameters($_SESSION['return_url'], 'ContentItemSelection',
             $_SESSION['lti_version'], $formParams);
         $page = LTI\Util::sendForm($_SESSION['return_url'], $formParams);
