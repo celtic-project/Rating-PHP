@@ -119,7 +119,7 @@ if ($ok) {
         $item->setText($_SESSION['text']);
         $item->setIcon(new Content\Image(getAppUrl() . 'images/icon50.png', 50, 50));
         $item->addCustom('content_item_id', $_SESSION['resource_id']);
-        $formParams['content_items'] = Content\Item::toJson($item);
+        $formParams['content_items'] = Content\Item::toJson($item, $_SESSION['lti_version']);
         if (!is_null($_SESSION['data'])) {
             $formParams['data'] = $_SESSION['data'];
         }
