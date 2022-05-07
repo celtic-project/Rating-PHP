@@ -189,16 +189,19 @@ if ($ok) {
     $jwksUrl = getAppUrl(1) . 'jwks.php';
 }
 
+$here = function($val) {
+    return $val;
+};
+
 // Page header
-$title = APP_NAME . ': Manage platforms';
 $page = <<< EOD
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="content-language" content="EN" />
 <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-<title>{$title}</title>
-<link href="../css/rating.css" media="screen" rel="stylesheet" type="text/css" />
+<title>{$here(APP_NAME)}: Manage platforms</title>
+<link href="../css/rating.css?v={$here(APP_VERSION)}" media="screen" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 //<![CDATA[
 var numSelected = 0;
@@ -241,7 +244,7 @@ window.onload=doOnLoad;
 </head>
 
 <body>
-<h1>{$title}</h1>
+<h1>{$here(APP_NAME)}: Manage platforms</h1>
 
 EOD;
 
@@ -479,6 +482,7 @@ EOD;
 }
 
 // Page footer
+$page .= pageFooter();
 $page .= <<< EOD
 </body>
 </html>

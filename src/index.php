@@ -181,20 +181,23 @@ if ($ok) {
     }
 }
 
+$here = function($val) {
+    return $val;
+};
+
 // Page header
-$title = APP_NAME;
 $page = <<< EOD
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="content-language" content="EN" />
   <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-  <title>{$title}</title>
+  <title>{$here(APP_NAME)}</title>
   <link href="css/rateit.css" media="screen" rel="stylesheet" type="text/css" />
   <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
   <script src="js/jquery.rateit.min.js" type="text/javascript"></script>
-  <script src="js/rating.js" type="text/javascript"></script>
-  <link href="css/rating.css" media="screen" rel="stylesheet" type="text/css" />
+  <script src="js/rating.js?v={$here(APP_VERSION)}" type="text/javascript"></script>
+  <link href="css/rating.css?v={$here(APP_VERSION)}" media="screen" rel="stylesheet" type="text/css" />
   <script type="text/javascript">
 //<![CDATA[
 function doContentItem(todo) {
@@ -377,6 +380,10 @@ if ($ok && !$_SESSION['isStudent'] && ($_SESSION['isContentItem'] || ($_SESSION[
 
   <h2>{$mode} item</h2>
 
+EOD;
+    if (!$_SESSION['isContentItem']) {
+        $page .= <<< EOD
+
   <form action="./" method="get">
     <div class="sharebox">
       <strong>New share key</strong><br /><br />
@@ -396,6 +403,9 @@ if ($ok && !$_SESSION['isStudent'] && ($_SESSION['isContentItem'] || ($_SESSION[
     </div>
   </form>
 
+EOD;
+    }
+    $page .= <<< EOD
   <form action="./" method="post">
     <div class="box">
       <span class="label">Title:<span class="required" title="required">*</span></span>&nbsp;<input name="title" type="text" size="50" maxlength="200" value="{$title}" /><br />
@@ -651,6 +661,7 @@ EOD;
 }
 
 // Page footer
+$page .= pageFooter();
 $page .= <<< EOD
 </body>
 </html>

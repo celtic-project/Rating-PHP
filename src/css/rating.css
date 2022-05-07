@@ -105,3 +105,11 @@ button {
   display: inline-block;
   cursor: pointer;
 }
+footer {
+  width: 100%;
+  margin-top: 1em;
+  padding: 5px 0 5px 0;
+  background-color: #f5f5f5;
+  text-align: center;
+  font-size: 80%;
+}

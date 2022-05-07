@@ -726,6 +726,20 @@ function postValue($name, $defaultValue = null)
     return $value;
 }
 
+function pageFooter()
+{
+    $here = function($val) {
+        return $val;
+    };
+
+    return <<< EOD
+    <footer>
+      <div>{$here(APP_NAME)} version {$here(APP_VERSION)} &copy; {$here(date('Y'))} <a href="//celtic-project.org/" target="_blank">ceLTIc Project</a> (powered by its open source <a href="https://github.com/celtic-project/LTI-PHP" target="_blank">LTI-PHP library</a>)</div>
+    </footer>
+
+EOD;
+}
+
 /**
  * Returns a string representation of a version 4 GUID, which uses random
  * numbers.There are 6 reserved bits, and the GUIDs have this format:
