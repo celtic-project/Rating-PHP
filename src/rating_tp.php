@@ -40,7 +40,9 @@ class RatingTool extends LTI\Tool
 
         $this->requiredServices[] = new Profile\ServiceDefinition(array('application/vnd.ims.lti.v2.toolproxy+json'), array('POST'));
 
-        $this->signatureMethod = SIGNATURE_METHOD;
+        if (isset($_SESSION['lti_version']) && ($_SESSION['lti_version'] === Util::LTI_VERSION1P3)) {
+            $this->signatureMethod = SIGNATURE_METHOD;
+        }
         $this->jku = getAppUrl() . 'jwks.php';
         $this->kid = KID;
         $this->rsaKey = PRIVATE_KEY;
@@ -63,6 +65,7 @@ class RatingTool extends LTI\Tool
             $_SESSION['user_pk'] = $this->userResult->getRecordId();
             $_SESSION['isStudent'] = $this->userResult->isLearner();
             $_SESSION['isContentItem'] = false;
+            $_SESSION['lti_version'] = $this->platform->ltiVersion;
 
 // Redirect the user to display the list of items for the resource link
             $this->redirectUrl = getAppUrl();

@@ -53,12 +53,12 @@ function init(&$db, $checkSession = null, $currentLevel = 0)
 // Set the logging level
     Util::$logLevel = Util::LOGLEVEL_ERROR;
 
-// Set the default tool
-    LTI\Tool::$defaultTool = new RatingTool(null);
-
 // Open session
     session_name(SESSION_NAME);
     session_start();
+
+// Set the default tool
+    LTI\Tool::$defaultTool = new RatingTool(null);
 
     if (!is_null($checkSession) && $checkSession) {
         $ok = isset($_SESSION['consumer_pk']) && (isset($_SESSION['resource_pk']) || is_null($_SESSION['resource_pk'])) &&
