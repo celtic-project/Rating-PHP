@@ -187,6 +187,9 @@ if ($ok) {
 
 // Set launch URL for information
     $jwksUrl = getAppUrl(1) . 'jwks.php';
+
+// Set Canvas configure URL for information
+    $configureUrl = getAppUrl(1) . 'configure.php';
 }
 
 $here = function($val) {
@@ -473,9 +476,11 @@ EOD;
     }
     $page .= <<< EOD
 </div>
-<p class="clear">
-NB The launch URL, initiate login URL, redirection URI and registration URL for this instance are all <strong>{$launchUrl}</strong>, and the public keyset URL is <strong>{$jwksUrl}</strong>
-</p>
+<ul class="clear">
+  <li><em>Launch URL, initiate login URL, redirection URI, registration URL:</em> {$launchUrl}</li>
+  <li><em>Public keyset URL:</em> {$jwksUrl}</li>
+  <li><em>Canvas configuration URLs:</em> {$configureUrl} (XML) and {$configureUrl}?json (JSON)</li>
+</ul>
 </form>
 
 EOD;
