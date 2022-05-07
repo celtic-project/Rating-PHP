@@ -49,7 +49,8 @@ class RatingTool extends LTI\Tool
         $this->requiredScopes = array(
             LTI\Service\LineItem::$SCOPE,
             LTI\Service\Score::$SCOPE,
-            LTI\Service\Membership::$SCOPE
+            LTI\Service\Membership::$SCOPE,
+            LTI\Service\Groups::$SCOPE
         );
     }
 
