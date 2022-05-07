@@ -1,4 +1,7 @@
 <?php
+
+use ceLTIc\LTI\Util;
+
 /**
  * This page contains the configuration settings for the application.
  *
@@ -9,9 +12,13 @@
 ###
 ###  Application settings
 ###
-define('APP_NAME', 'Rating');
-define('SESSION_NAME', 'php-rating');
-define('VERSION', '4.1.0');
+// Uncomment the next line to log all PHP messages
+//  error_reporting(E_ALL);
+// Set the application logging level
+Util::$logLevel = Util::LOGLEVEL_ERROR;
+
+// Specify a prefix (starting with '/') when the REQUEST_URI server variable is missing the first part of the real path
+define('REQUEST_URI_PREFIX', '');
 
 ###
 ###  Database connection settings
@@ -20,11 +27,9 @@ define('DB_NAME', '');  // e.g. 'mysql:dbname=MyDb;host=localhost' or 'sqlite:ph
 define('DB_USERNAME', '');
 define('DB_PASSWORD', '');
 define('DB_TABLENAME_PREFIX', '');
-// Specify a prefix (starting with '/') when the REQUEST_URI server variable is missing the first part of the real path
-define('REQUEST_URI_PREFIX', '');
 
 ###
-###  Security settings
+###  LTI 1.3 Security settings
 ###
 define('SIGNATURE_METHOD', 'RS256');
 define('KID', '');  // A random string to identify the key value
@@ -36,7 +41,7 @@ EOD
 );
 
 ###
-###  Registration settings
+###  Dynamic registration settings
 ###
 define('AUTO_ENABLE', false);
 define('ENABLE_FOR_DAYS', 0);

@@ -3,6 +3,7 @@
 use ceLTIc\LTI;
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\Profile;
+use ceLTIc\LTI\Util;
 
 /**
  * This page processes a launch request from an LTI platform.
@@ -26,7 +27,7 @@ class RatingTool extends LTI\Tool
 
         $this->vendor = new Profile\Item('ims', 'IMSGlobal', 'IMS Global Learning Consortium Inc', 'https://www.imsglobal.org/');
         $this->product = new Profile\Item('d751f24f-140e-470f-944c-2d92b114db40', 'Rating',
-            'Sample LTI tool to create lists of items to be rated.', 'http://www.spvsoftwareproducts.com/php/rating/', VERSION);
+            'Sample LTI tool to create lists of items to be rated.', 'http://www.spvsoftwareproducts.com/php/rating/', APP_VERSION);
 
         $requiredMessages = array(new Profile\Message('basic-lti-launch-request', 'connect.php', array('User.id', 'Membership.role')));
         $optionalMessages = array(new Profile\Message('ContentItemSelectionRequest', 'connect.php',

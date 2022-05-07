@@ -2,7 +2,6 @@
 
 use ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector;
-use ceLTIc\LTI\Util;
 use ceLTIc\LTI\ApiHook\ApiHook;
 use ceLTIc\LTI\OAuth;
 
@@ -16,8 +15,10 @@ use ceLTIc\LTI\OAuth;
 require_once('db.php');
 require_once('rating_tp.php');
 
-###  Uncomment the next line to log error messages
-//  error_reporting(E_ALL);
+###  Application settings
+define('APP_NAME', 'Rating');
+define('APP_VERSION', '4.1.0');
+define('SESSION_NAME', 'php-rating');
 
 LTI\ResourceLink::registerApiHook(ApiHook::$MEMBERSHIPS_SERVICE_HOOK, 'moodle', 'ceLTIc\LTI\ApiHook\moodle\MoodleApiResourceLink');
 LTI\Tool::registerApiHook(ApiHook::$USER_ID_HOOK, 'canvas', 'ceLTIc\LTI\ApiHook\canvas\CanvasApiTool');
@@ -49,9 +50,6 @@ function init(&$db, $checkSession = null, $currentLevel = 0)
         ini_set('session.cookie_samesite', 'none');
         ini_set('session.cookie_secure', true);
     }
-
-// Set the logging level
-    Util::$logLevel = Util::LOGLEVEL_ERROR;
 
 // Open session
     session_name(SESSION_NAME);
