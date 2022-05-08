@@ -635,7 +635,7 @@ EOD;
             } else {
                 $page .= <<< EOD
     <p>
-      Your course does not appear to offer the ability to access a list of groups, or there is none to be accessed.
+      Your course does not appear to offer the ability to access a list of groups, or there are no group sets available.
     </p>
 
 EOD;
