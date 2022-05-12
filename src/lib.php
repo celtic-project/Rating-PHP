@@ -17,7 +17,7 @@ require_once('rating_tp.php');
 
 ###  Application settings
 define('APP_NAME', 'Rating');
-define('APP_VERSION', '4.1.0');
+define('APP_VERSION', '4.2.0');
 define('SESSION_NAME', 'php-rating');
 
 LTI\ResourceLink::registerApiHook(ApiHook::$MEMBERSHIPS_SERVICE_HOOK, 'moodle', 'ceLTIc\LTI\ApiHook\moodle\MoodleApiResourceLink');
