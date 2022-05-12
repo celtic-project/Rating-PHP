@@ -21,6 +21,7 @@ $ok = init($db, true);
 // Initialise parameters
 $id = 0;
 $userList = false;
+$lineitemList = false;
 
 if ($ok) {
     $action = '';
@@ -163,6 +164,8 @@ if ($ok) {
         exit;
     } else if (isset($_POST['userlist'])) {
         $userList = true;
+    } else if (isset($_POST['lineitemlist'])) {
+        $lineitemList = true;
     }
 
 // Initialise an empty item instance
@@ -534,7 +537,11 @@ EOD;
     }
 
     $page .= <<< EOD
-  <div class="clear" style="margin-left: 10px;">
+  <h2 class="clear">Sample service requests</h2>
+
+  <h3>Users</h3>
+
+  <div style="margin-left: 10px;">
 
 EOD;
     if ($resourceLink->hasMembershipsService()) {
@@ -651,6 +658,73 @@ EOD;
     } else if (!$_SESSION['isContentItem']) {
         $page .= <<< EOD
     Your course does not appear to offer the ability to access a list of users.
+
+EOD;
+    }
+    $page .= <<< EOD
+  </div>
+
+  <h3>Line Items</h3>
+
+  <div style="margin-left: 10px;">
+
+EOD;
+    if ($resourceLink->hasLineItemService()) {
+        if ($lineitemList) {
+            $lineitems = $resourceLink->getLineItems();
+            $page .= <<< EOD
+    <form action="./" method="post">
+      <input type="submit" name="lineitemlist" value="Refresh line item list" />
+    </form>
+
+    <table class="lineitems" border="0" cellpadding="3">
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Points possible</th>
+        <th>Resource Link ID</th>
+        <th>Resource ID</th>
+        <th>Tag</th>
+      </tr>
+    </thead>
+    <tbody>
+
+EOD;
+            $sortedlineitems = array();
+            if (!empty($lineitems)) {
+                foreach ($lineitems as $lineitem) {
+                    $sortedlineitems[$lineitem->label] = $lineitem;
+                }
+                ksort($sortedlineitems);
+                foreach ($sortedlineitems as $label => $lineitem) {
+                    $page .= <<< EOD
+       <tr>
+         <td>{$lineitem->label}</td>
+         <td class="alignright">$lineitem->pointsPossible</td>
+         <td>{$lineitem->ltiResourceLinkId}</td>
+         <td>{$lineitem->resourceId}</td>
+         <td>{$lineitem->tag}</td>
+       </tr>
+
+EOD;
+                }
+            }
+            $page .= <<< EOD
+    </tbody>
+    </table>
+
+EOD;
+        } else {
+            $page .= <<< EOD
+    <form action="./" method="post">
+      Your course appears to offer the ability to access a list of line items. <input type="submit" id="id_lineitems" name="lineitemlist" value="Show line item list" />
+    </form>
+
+EOD;
+        }
+    } else if (!$_SESSION['isContentItem']) {
+        $page .= <<< EOD
+    Your course does not appear to offer the ability to access a list of line items.
 
 EOD;
     }
