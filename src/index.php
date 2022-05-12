@@ -539,9 +539,9 @@ EOD;
     $page .= <<< EOD
   <h2 class="clear">Sample service requests</h2>
 
-  <h3>Users</h3>
-
   <div style="margin-left: 10px;">
+
+    <h3>Users</h3>
 
 EOD;
     if ($resourceLink->hasMembershipsService()) {
@@ -664,9 +664,9 @@ EOD;
     $page .= <<< EOD
   </div>
 
-  <h3>Line Items</h3>
-
   <div style="margin-left: 10px;">
+
+    <h3>Line Items</h3>
 
 EOD;
     if ($resourceLink->hasLineItemService()) {
