@@ -1,0 +1,9 @@
+# File with env configurations
+/src/config.php
+
+# Composer vendor folder
+/vendor/
+/src/vendor/
+
+# PHPStorm
+.idea/
