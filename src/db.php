@@ -29,7 +29,7 @@ function open_db()
         $db = false;
         $_SESSION['error_message'] = "Database error {$e->getCode()}: {$e->getMessage()}";
     }
-
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
     return $db;
 }
 
