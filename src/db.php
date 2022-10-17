@@ -41,7 +41,13 @@ function tableExists($db, $name)
 {
     $sql = "select 1 from {$name}";
     $query = $db->prepare($sql);
-    return $query->execute() !== false;
+    try {
+        $ok = $query->execute() !== false;
+    } catch (PDOException $e) {
+        $ok = false;
+    }
+
+    return $ok;
 }
 
 ###
