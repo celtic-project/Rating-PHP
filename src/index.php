@@ -21,6 +21,7 @@ $ok = init($db, true);
 // Initialise parameters
 $id = 0;
 $userList = false;
+$lineitemList = false;
 
 if ($ok) {
     $action = '';
@@ -98,6 +99,8 @@ if ($ok) {
 
 // Process content-item save action
     } else if ($action == 'saveci') {
+        $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+        $platform = LTI\Platform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
 // Pass on preference for overlay, popup, iframe, frame options in that order if any of these is offered
         $placement = null;
         $documentTarget = '';
@@ -119,12 +122,14 @@ if ($ok) {
         $item->setText($_SESSION['text']);
         $item->setIcon(new Content\Image(getAppUrl() . 'images/icon50.png', 50, 50));
         $item->addCustom('content_item_id', $_SESSION['resource_id']);
-        $formParams['content_items'] = Content\Item::toJson($item);
+        if (strpos($platform->consumerVersion, 'canvas') === 0) {
+            $item->setUrl(getAppUrl() . 'connect.php');
+        }
+        $formParams['content_items'] = Content\Item::toJson($item, $_SESSION['lti_version']);
         if (!is_null($_SESSION['data'])) {
             $formParams['data'] = $_SESSION['data'];
         }
-        $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-        LTI\Tool::$defaultTool->platform = LTI\Platform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
+        LTI\Tool::$defaultTool->platform = $platform;
         $formParams = LTI\Tool::$defaultTool->signParameters($_SESSION['return_url'], 'ContentItemSelection',
             $_SESSION['lti_version'], $formParams);
         $page = LTI\Util::sendForm($_SESSION['return_url'], $formParams);
@@ -159,6 +164,8 @@ if ($ok) {
         exit;
     } else if (isset($_POST['userlist'])) {
         $userList = true;
+    } else if (isset($_POST['lineitemlist'])) {
+        $lineitemList = true;
     }
 
 // Initialise an empty item instance
@@ -177,20 +184,23 @@ if ($ok) {
     }
 }
 
+$here = function($val) {
+    return $val;
+};
+
 // Page header
-$title = APP_NAME;
 $page = <<< EOD
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="content-language" content="EN" />
   <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-  <title>{$title}</title>
+  <title>{$here(APP_NAME)}</title>
   <link href="css/rateit.css" media="screen" rel="stylesheet" type="text/css" />
   <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
   <script src="js/jquery.rateit.min.js" type="text/javascript"></script>
-  <script src="js/rating.js" type="text/javascript"></script>
-  <link href="css/rating.css" media="screen" rel="stylesheet" type="text/css" />
+  <script src="js/rating.js?v={$here(APP_VERSION)}" type="text/javascript"></script>
+  <link href="css/rating.css?v={$here(APP_VERSION)}" media="screen" rel="stylesheet" type="text/css" />
   <script type="text/javascript">
 //<![CDATA[
 function doContentItem(todo) {
@@ -373,6 +383,10 @@ if ($ok && !$_SESSION['isStudent'] && ($_SESSION['isContentItem'] || ($_SESSION[
 
   <h2>{$mode} item</h2>
 
+EOD;
+    if (!$_SESSION['isContentItem']) {
+        $page .= <<< EOD
+
   <form action="./" method="get">
     <div class="sharebox">
       <strong>New share key</strong><br /><br />
@@ -392,6 +406,9 @@ if ($ok && !$_SESSION['isStudent'] && ($_SESSION['isContentItem'] || ($_SESSION[
     </div>
   </form>
 
+EOD;
+    }
+    $page .= <<< EOD
   <form action="./" method="post">
     <div class="box">
       <span class="label">Title:<span class="required" title="required">*</span></span>&nbsp;<input name="title" type="text" size="50" maxlength="200" value="{$title}" /><br />
@@ -520,7 +537,11 @@ EOD;
     }
 
     $page .= <<< EOD
-  <div class="clear" style="margin-left: 10px;">
+  <h2 class="clear">Sample service requests</h2>
+
+  <div style="margin-left: 10px;">
+
+    <h3>Users</h3>
 
 EOD;
     if ($resourceLink->hasMembershipsService()) {
@@ -621,7 +642,7 @@ EOD;
             } else {
                 $page .= <<< EOD
     <p>
-      Your course does not appear to offer the ability to access a list of groups, or there is none to be accessed.
+      Your course does not appear to offer the ability to access a list of groups, or there are no group sets available.
     </p>
 
 EOD;
@@ -643,10 +664,78 @@ EOD;
     $page .= <<< EOD
   </div>
 
+  <div style="margin-left: 10px;">
+
+    <h3>Line Items</h3>
+
+EOD;
+    if ($resourceLink->hasLineItemService()) {
+        if ($lineitemList) {
+            $lineitems = $resourceLink->getLineItems();
+            $page .= <<< EOD
+    <form action="./" method="post">
+      <input type="submit" name="lineitemlist" value="Refresh line item list" />
+    </form>
+
+    <table class="lineitems" border="0" cellpadding="3">
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Points possible</th>
+        <th>Resource Link ID</th>
+        <th>Resource ID</th>
+        <th>Tag</th>
+      </tr>
+    </thead>
+    <tbody>
+
+EOD;
+            $sortedlineitems = array();
+            if (!empty($lineitems)) {
+                foreach ($lineitems as $lineitem) {
+                    $sortedlineitems[$lineitem->label] = $lineitem;
+                }
+                ksort($sortedlineitems);
+                foreach ($sortedlineitems as $label => $lineitem) {
+                    $page .= <<< EOD
+       <tr>
+         <td>{$lineitem->label}</td>
+         <td class="alignright">$lineitem->pointsPossible</td>
+         <td>{$lineitem->ltiResourceLinkId}</td>
+         <td>{$lineitem->resourceId}</td>
+         <td>{$lineitem->tag}</td>
+       </tr>
+
+EOD;
+                }
+            }
+            $page .= <<< EOD
+    </tbody>
+    </table>
+
+EOD;
+        } else {
+            $page .= <<< EOD
+    <form action="./" method="post">
+      Your course appears to offer the ability to access a list of line items. <input type="submit" id="id_lineitems" name="lineitemlist" value="Show line item list" />
+    </form>
+
+EOD;
+        }
+    } else if (!$_SESSION['isContentItem']) {
+        $page .= <<< EOD
+    Your course does not appear to offer the ability to access a list of line items.
+
+EOD;
+    }
+    $page .= <<< EOD
+  </div>
+
 EOD;
 }
 
 // Page footer
+$page .= pageFooter();
 $page .= <<< EOD
 </body>
 </html>

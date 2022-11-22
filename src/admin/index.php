@@ -187,18 +187,24 @@ if ($ok) {
 
 // Set launch URL for information
     $jwksUrl = getAppUrl(1) . 'jwks.php';
+
+// Set Canvas configure URL for information
+    $configureUrl = getAppUrl(1) . 'configure.php';
 }
 
+$here = function($val) {
+    return $val;
+};
+
 // Page header
-$title = APP_NAME . ': Manage platforms';
 $page = <<< EOD
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="content-language" content="EN" />
 <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-<title>{$title}</title>
-<link href="../css/rating.css" media="screen" rel="stylesheet" type="text/css" />
+<title>{$here(APP_NAME)}: Manage platforms</title>
+<link href="../css/rating.css?v={$here(APP_VERSION)}" media="screen" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 //<![CDATA[
 var numSelected = 0;
@@ -241,7 +247,7 @@ window.onload=doOnLoad;
 </head>
 
 <body>
-<h1>{$title}</h1>
+<h1>{$here(APP_NAME)}: Manage platforms</h1>
 
 EOD;
 
@@ -470,15 +476,18 @@ EOD;
     }
     $page .= <<< EOD
 </div>
-<p class="clear">
-NB The launch URL, initiate login URL, redirection URI and registration URL for this instance are all <strong>{$launchUrl}</strong>, and the public keyset URL is <strong>{$jwksUrl}</strong>
-</p>
+<ul class="clear">
+  <li><em>Launch URL, initiate login URL, redirection URI, registration URL:</em> {$launchUrl}</li>
+  <li><em>Public keyset URL:</em> {$jwksUrl}</li>
+  <li><em>Canvas configuration URLs:</em> {$configureUrl} (XML) and {$configureUrl}?json (JSON)</li>
+</ul>
 </form>
 
 EOD;
 }
 
 // Page footer
+$page .= pageFooter();
 $page .= <<< EOD
 </body>
 </html>

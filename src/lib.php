@@ -2,7 +2,6 @@
 
 use ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector;
-use ceLTIc\LTI\Util;
 use ceLTIc\LTI\ApiHook\ApiHook;
 use ceLTIc\LTI\OAuth;
 
@@ -16,8 +15,10 @@ use ceLTIc\LTI\OAuth;
 require_once('db.php');
 require_once('rating_tp.php');
 
-###  Uncomment the next line to log error messages
-//  error_reporting(E_ALL);
+###  Application settings
+define('APP_NAME', 'Rating');
+define('APP_VERSION', '4.2.0');
+define('SESSION_NAME', 'php-rating');
 
 LTI\ResourceLink::registerApiHook(ApiHook::$MEMBERSHIPS_SERVICE_HOOK, 'moodle', 'ceLTIc\LTI\ApiHook\moodle\MoodleApiResourceLink');
 LTI\Tool::registerApiHook(ApiHook::$USER_ID_HOOK, 'canvas', 'ceLTIc\LTI\ApiHook\canvas\CanvasApiTool');
@@ -50,15 +51,12 @@ function init(&$db, $checkSession = null, $currentLevel = 0)
         ini_set('session.cookie_secure', true);
     }
 
-// Set the logging level
-    Util::$logLevel = Util::LOGLEVEL_ERROR;
-
-// Set the default tool
-    LTI\Tool::$defaultTool = new RatingTool(null);
-
 // Open session
     session_name(SESSION_NAME);
     session_start();
+
+// Set the default tool
+    LTI\Tool::$defaultTool = new RatingTool(null);
 
     if (!is_null($checkSession) && $checkSession) {
         $ok = isset($_SESSION['consumer_pk']) && (isset($_SESSION['resource_pk']) || is_null($_SESSION['resource_pk'])) &&
@@ -726,6 +724,20 @@ function postValue($name, $defaultValue = null)
     }
 
     return $value;
+}
+
+function pageFooter()
+{
+    $here = function($val) {
+        return $val;
+    };
+
+    return <<< EOD
+    <footer>
+      <div>{$here(APP_NAME)} version {$here(APP_VERSION)} &copy; {$here(date('Y'))} <a href="//celtic-project.org/" target="_blank">ceLTIc Project</a> (powered by its open source <a href="https://github.com/celtic-project/LTI-PHP" target="_blank">LTI-PHP library</a>)</div>
+    </footer>
+
+EOD;
 }
 
 /**

@@ -1,6 +1,7 @@
 <?php
 
 use ceLTIc\LTI\DataConnector;
+use ceLTIc\LTI\Util;
 
 /**
  * This page provides functions for accessing the database.
@@ -9,8 +10,12 @@ use ceLTIc\LTI\DataConnector;
  * @copyright  SPV Software Products
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
-require_once('config.php');
 require_once('vendor/autoload.php');
+
+// Set the default application logging level
+Util::$logLevel = Util::LOGLEVEL_ERROR;
+
+require_once('config.php');
 
 ###
 ###  Return a connection to the database, return false if an error occurs
@@ -36,7 +41,13 @@ function tableExists($db, $name)
 {
     $sql = "select 1 from {$name}";
     $query = $db->prepare($sql);
-    return $query->execute() !== false;
+    try {
+        $ok = $query->execute() !== false;
+    } catch (PDOException $e) {
+        $ok = false;
+    }
+
+    return $ok;
 }
 
 ###

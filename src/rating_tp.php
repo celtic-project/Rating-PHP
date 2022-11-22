@@ -3,6 +3,7 @@
 use ceLTIc\LTI;
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\Profile;
+use ceLTIc\LTI\Util;
 
 /**
  * This page processes a launch request from an LTI platform.
@@ -24,9 +25,9 @@ class RatingTool extends LTI\Tool
 
         $this->baseUrl = getAppUrl();
 
-        $this->vendor = new Profile\Item('ims', 'IMSGlobal', 'IMS Global Learning Consortium Inc', 'https://www.imsglobal.org/');
+        $this->vendor = new Profile\Item('celtic', 'ceLTIc Project', 'ceLTIc Project', 'https://www.celtic-project.org/');
         $this->product = new Profile\Item('d751f24f-140e-470f-944c-2d92b114db40', 'Rating',
-            'Sample LTI tool to create lists of items to be rated.', 'http://www.spvsoftwareproducts.com/php/rating/', VERSION);
+            'Sample LTI tool to create lists of items to be rated.', 'http://www.spvsoftwareproducts.com/php/rating/', APP_VERSION);
 
         $requiredMessages = array(new Profile\Message('basic-lti-launch-request', 'connect.php', array('User.id', 'Membership.role')));
         $optionalMessages = array(new Profile\Message('ContentItemSelectionRequest', 'connect.php',
@@ -40,14 +41,17 @@ class RatingTool extends LTI\Tool
 
         $this->requiredServices[] = new Profile\ServiceDefinition(array('application/vnd.ims.lti.v2.toolproxy+json'), array('POST'));
 
-        $this->signatureMethod = SIGNATURE_METHOD;
+        if (isset($_SESSION['lti_version']) && ($_SESSION['lti_version'] === Util::LTI_VERSION1P3)) {
+            $this->signatureMethod = SIGNATURE_METHOD;
+        }
         $this->jku = getAppUrl() . 'jwks.php';
         $this->kid = KID;
         $this->rsaKey = PRIVATE_KEY;
         $this->requiredScopes = array(
             LTI\Service\LineItem::$SCOPE,
             LTI\Service\Score::$SCOPE,
-            LTI\Service\Membership::$SCOPE
+            LTI\Service\Membership::$SCOPE,
+            LTI\Service\Groups::$SCOPE
         );
     }
 
@@ -63,6 +67,7 @@ class RatingTool extends LTI\Tool
             $_SESSION['user_pk'] = $this->userResult->getRecordId();
             $_SESSION['isStudent'] = $this->userResult->isLearner();
             $_SESSION['isContentItem'] = false;
+            $_SESSION['lti_version'] = $this->platform->ltiVersion;
 
 // Redirect the user to display the list of items for the resource link
             $this->redirectUrl = getAppUrl();
@@ -281,7 +286,7 @@ EOD;
   <h1>{$appName} Tool Registration</h1>
 
   <p>
-    This page allows you to complete a registration with a Moodle LTI 1.3 platform (other platforms will be supported once they offer this facility).
+    This page allows you to perform a dynamic registration with an LTI 1.3 platform.
   </p>
 
   <p id="id_continue" class="aligncentre">
@@ -298,8 +303,8 @@ EOD;
     The tool registration failed<span id="id_reason"></span>
   </p>
 
-  <p class="aligncentre">
-    <button type="button" id="id_close" class="hide" onclick="return doClose(this);">Close</button>
+  <p id="id_close" class="aligncentre hide">
+    <button type="button" onclick="return doClose(this);">Close</button>
   </p>
 
   </body>
@@ -341,22 +346,21 @@ EOD;
         $platformConfig = $this->getPlatformConfiguration();
         if ($this->ok) {
             $toolConfig = $this->getConfiguration($platformConfig);
-            error_log(var_export(json_encode($toolConfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), true));
             $registrationConfig = $this->sendRegistration($platformConfig, $toolConfig);
             if ($this->ok) {
-                $platform = $this->getPlatformToRegister($platformConfig, $registrationConfig, false);
+                $this->getPlatformToRegister($platformConfig, $registrationConfig, false);
                 if (defined('AUTO_ENABLE') && AUTO_ENABLE) {
-                    $platform->enabled = true;
+                    $this->platform->enabled = true;
                 }
                 if (defined('ENABLE_FOR_DAYS') && (ENABLE_FOR_DAYS > 0)) {
                     $now = time();
-                    $platform->enableFrom = $now;
-                    $platform->enableUntil = $now + (ENABLE_FOR_DAYS * 24 * 60 * 60);
+                    $this->platform->enableFrom = $now;
+                    $this->platform->enableUntil = $now + (ENABLE_FOR_DAYS * 24 * 60 * 60);
                 }
-                $this->ok = $platform->save();
+                $this->ok = $this->platform->save();
                 if (!$this->ok) {
-                    $checkPlatform = Platform::fromPlatformId($platform->platformId, $platform->clientId, $platform->deploymentId,
-                            $this->dataConnector);
+                    $checkPlatform = Platform::fromPlatformId($this->platform->platformId, $this->platform->clientId,
+                            $this->platform->deploymentId, $this->dataConnector);
                     if (!empty($checkPlatform->created)) {
                         $this->reason = 'The platform is already registered.';
                     } else {
