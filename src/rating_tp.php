@@ -102,7 +102,7 @@ class RatingTool extends LTI\Tool
             $_SESSION['return_url'] = $this->returnUrl;
             $_SESSION['title'] = postValue('title', 'Rating item');
             $_SESSION['text'] = postValue('text');
-            $_SESSION['data'] = postValue('data');
+            $_SESSION['data'] = $this->messageParameters["data"]; #postValue('data');
             $_SESSION['document_targets'] = $this->documentTargets;
 // Redirect the user to display the list of items for the resource link
             $this->redirectUrl = getAppUrl();
