@@ -1,6 +1,7 @@
 <?php
 
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\Enum\LogLevel;
 
 /**
  * This page contains the configuration settings for the application.
@@ -15,7 +16,7 @@ use ceLTIc\LTI\Util;
 // Uncomment the next line to log all PHP messages
 //  error_reporting(E_ALL);
 // Set the application logging level
-Util::$logLevel = Util::LOGLEVEL_ERROR;
+Util::$logLevel = LogLevel::Error;
 
 // Specify a prefix (starting with '/') when the REQUEST_URI server variable is missing the first part of the real path
 define('REQUEST_URI_PREFIX', '');

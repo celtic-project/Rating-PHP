@@ -3,7 +3,7 @@
 use ceLTIc\LTI;
 use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\Profile;
-use ceLTIc\LTI\Util;
+use ceLTIc\LTI\Enum\LtiVersion;
 
 /**
  * This page processes a launch request from an LTI platform.
@@ -41,7 +41,7 @@ class RatingTool extends LTI\Tool
 
         $this->requiredServices[] = new Profile\ServiceDefinition(array('application/vnd.ims.lti.v2.toolproxy+json'), array('POST'));
 
-        if (isset($_SESSION['lti_version']) && ($_SESSION['lti_version'] === Util::LTI_VERSION1P3)) {
+        if (isset($_SESSION['lti_version']) && ($_SESSION['lti_version'] === LtiVersion::V1P3)) {
             $this->signatureMethod = SIGNATURE_METHOD;
         }
         $this->jku = getAppUrl() . 'jwks.php';
@@ -55,7 +55,7 @@ class RatingTool extends LTI\Tool
         );
     }
 
-    protected function onLaunch()
+    protected function onLaunch(): void
     {
 // Check the user has an appropriate role
         if ($this->userResult->isLearner() || $this->userResult->isStaff()) {
@@ -77,7 +77,7 @@ class RatingTool extends LTI\Tool
         }
     }
 
-    protected function onContentItem()
+    protected function onContentItem(): void
     {
 // Check that the Platform is allowing the return of an LTI link
         $this->ok = in_array(LTI\ContentItem::LTI_LINK_MEDIA_TYPE, $this->mediaTypes) || in_array('*/*', $this->mediaTypes);
@@ -109,7 +109,7 @@ class RatingTool extends LTI\Tool
         }
     }
 
-    protected function onDashboard()
+    protected function onDashboard(): void
     {
         global $db;
 
@@ -209,7 +209,7 @@ EOD;
         }
     }
 
-    protected function onRegister()
+    protected function onRegister(): void
     {
 // Initialise the user session
         $_SESSION['consumer_pk'] = $this->platform->getRecordId();
@@ -221,7 +221,7 @@ EOD;
         $this->redirectUrl = getAppUrl() . 'register.php';
     }
 
-    protected function onRegistration()
+    protected function onRegistration(): void
     {
         if (!defined('AUTO_ENABLE') || !AUTO_ENABLE) {
             $successMessage = 'Note that the tool must be enabled by the tool provider before it can be used.';
@@ -241,7 +241,7 @@ EOD;
   <meta http-equiv="content-language" content="EN" />
   <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
   <title>LTI Tool registration</title>
-  <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
+  <script src="js/jquery-3.7.0.min.js" type="text/javascript"></script>
   <link href="css/rating.css" media="screen" rel="stylesheet" type="text/css" />
   <script type="text/javascript">
     //<![CDATA[
@@ -313,7 +313,7 @@ EOD;
         $this->output = $html;
     }
 
-    protected function onError()
+    protected function onError(): void
     {
         $msg = $this->message;
         if ($this->debugMode && !empty($this->reason)) {
@@ -341,7 +341,7 @@ EOD;
 EOD;
     }
 
-    public function doRegistration()
+    public function doRegistration(): void
     {
         $platformConfig = $this->getPlatformConfiguration();
         if ($this->ok) {

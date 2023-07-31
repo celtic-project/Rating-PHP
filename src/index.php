@@ -197,7 +197,7 @@ $page = <<< EOD
   <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
   <title>{$here(APP_NAME)}</title>
   <link href="css/rateit.css" media="screen" rel="stylesheet" type="text/css" />
-  <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
+  <script src="js/jquery-3.7.0.min.js" type="text/javascript"></script>
   <script src="js/jquery.rateit.min.js" type="text/javascript"></script>
   <script src="js/rating.js?v={$here(APP_VERSION)}" type="text/javascript"></script>
   <link href="css/rating.css?v={$here(APP_VERSION)}" media="screen" rel="stylesheet" type="text/css" />

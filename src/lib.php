@@ -4,6 +4,7 @@ use ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector;
 use ceLTIc\LTI\ApiHook\ApiHook;
 use ceLTIc\LTI\OAuth;
+use ceLTIc\LTI\Enum\ServiceAction;
 
 /**
  * This page provides general functions to support the application.
@@ -17,7 +18,7 @@ require_once('rating_tp.php');
 
 ###  Application settings
 define('APP_NAME', 'Rating');
-define('APP_VERSION', '4.2.0');
+define('APP_VERSION', '5.0.0');
 define('SESSION_NAME', 'php-rating');
 
 LTI\ResourceLink::registerApiHook(ApiHook::$MEMBERSHIPS_SERVICE_HOOK, 'moodle', 'ceLTIc\LTI\ApiHook\moodle\MoodleApiResourceLink');
@@ -497,10 +498,10 @@ function updateGradebook($db, $userResourcePk = null, $userUserPk = null, $item 
                     $itemDesc = 'items';
                 }
                 $ltiOutcome->comment = "{$count} {$itemDesc} rated out of {$num}.";
-                $resourceLink->doOutcomesService(LTI\ResourceLink::EXT_WRITE, $ltiOutcome, $user);
+                $resourceLink->doOutcomesService(ServiceAction::Write, $ltiOutcome, $user);
             } else {
                 $ltiOutcome = new LTI\Outcome();
-                $resourceLink->doOutcomesService(LTI\ResourceLink::EXT_DELETE, $ltiOutcome, $user);
+                $resourceLink->doOutcomesService(ServiceAction::Delete, $ltiOutcome, $user);
             }
         }
     }

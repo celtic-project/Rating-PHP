@@ -4,6 +4,7 @@ use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\Tool;
 use ceLTIc\LTI\DataConnector\DataConnector;
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\Enum\LtiVersion;
 
 /**
  * This page manages the definition of LTI platform records.  A platform record is required to
@@ -44,7 +45,7 @@ if ($ok) {
         if (!empty($id) || !empty($_POST['name'])) {
             if (empty($id)) {
                 $updatePlatform = new Platform($dataConnector);
-                $updatePlatform->ltiVersion = Util::LTI_VERSION1;
+                $updatePlatform->ltiVersion = LtiVersion::V1;
             } else {
                 $updatePlatform = Platform::fromRecordId($id, $dataConnector);
             }
@@ -102,8 +103,8 @@ if ($ok) {
                 $updatePlatform->jku = null;
             }
             if (!empty($_POST['ltiversion'])) {
-                $updatePlatform->ltiVersion = $_POST['ltiversion'];
-                if ($updatePlatform->ltiVersion === Util::LTI_VERSION1P3) {
+                $updatePlatform->ltiVersion = LtiVersion::tryFrom($_POST['ltiversion']);
+                if ($updatePlatform->ltiVersion === LtiVersion::V1P3) {
                     $updatePlatform->signatureMethod = 'RS256';
                 }
             }
@@ -379,7 +380,7 @@ EOD;
     } else {
         $mode = 'Update';
         $update = ' disabled="disabled"';
-        if ($updatePlatform->ltiVersion === Util::LTI_VERSION2) {
+        if ($updatePlatform->ltiVersion === LtiVersion::V2) {
             $lti2 = ' disabled="disabled"';
         }
     }
@@ -424,11 +425,11 @@ EOD;
     } else {
         $debug = '';
     }
-    $v1 = Util::LTI_VERSION1;
-    $v1p3 = Util::LTI_VERSION1P3;
+    $v1 = LtiVersion::V1->value;
+    $v1p3 = LtiVersion::V1P3->value;
     $v1Selected = ' selected';
     $v1p3Selected = '';
-    if ($updatePlatform->ltiVersion === $v1p3) {
+    if ($updatePlatform->ltiVersion === LtiVersion::V1P3) {
         $v1Selected = '';
         $v1p3Selected = ' selected';
     }

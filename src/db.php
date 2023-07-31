@@ -2,6 +2,7 @@
 
 use ceLTIc\LTI\DataConnector;
 use ceLTIc\LTI\Util;
+use ceLTIc\LTI\Enum\LogLevel;
 
 /**
  * This page provides functions for accessing the database.
@@ -13,7 +14,7 @@ use ceLTIc\LTI\Util;
 require_once('vendor/autoload.php');
 
 // Set the default application logging level
-Util::$logLevel = Util::LOGLEVEL_ERROR;
+Util::$logLevel = LogLevel::Error;
 
 require_once('config.php');
 
@@ -65,8 +66,8 @@ function init_db($db)
     $ok = true;
     $prefix = DB_TABLENAME_PREFIX;
 
-    if (!tableExists($db, $prefix . DataConnector\DataConnector::CONSUMER_TABLE_NAME)) {
-        $sql = "CREATE TABLE {$prefix}" . DataConnector\DataConnector::CONSUMER_TABLE_NAME . ' (' .
+    if (!tableExists($db, $prefix . DataConnector\DataConnector::PLATFORM_TABLE_NAME)) {
+        $sql = "CREATE TABLE {$prefix}" . DataConnector\DataConnector::PLATFORM_TABLE_NAME . ' (' .
             'consumer_pk int(11) NOT NULL AUTO_INCREMENT, ' .
             'name varchar(50) NOT NULL, ' .
             'consumer_key varchar(256) DEFAULT NULL, ' .
@@ -94,14 +95,14 @@ function init_db($db)
             ') ENGINE=InnoDB DEFAULT CHARSET=utf8';
         $ok = $db->exec($sql) !== false;
         if ($ok) {
-            $sql = "ALTER TABLE {$prefix}" . DataConnector\DataConnector::CONSUMER_TABLE_NAME . ' ' .
-                "ADD UNIQUE INDEX {$prefix}" . DataConnector\DataConnector::CONSUMER_TABLE_NAME . '_' .
+            $sql = "ALTER TABLE {$prefix}" . DataConnector\DataConnector::PLATFORM_TABLE_NAME . ' ' .
+                "ADD UNIQUE INDEX {$prefix}" . DataConnector\DataConnector::PLATFORM_TABLE_NAME . '_' .
                 'consumer_key_UNIQUE (consumer_key ASC)';
             $ok = $db->exec($sql) !== false;
         }
         if ($ok) {
-            $sql = "ALTER TABLE {$prefix}" . DataConnector\DataConnector::CONSUMER_TABLE_NAME . ' ' .
-                "ADD UNIQUE INDEX {$prefix}" . DataConnector\DataConnector::CONSUMER_TABLE_NAME . '_' .
+            $sql = "ALTER TABLE {$prefix}" . DataConnector\DataConnector::PLATFORM_TABLE_NAME . ' ' .
+                "ADD UNIQUE INDEX {$prefix}" . DataConnector\DataConnector::PLATFORM_TABLE_NAME . '_' .
                 'platform_UNIQUE (platform_id ASC, client_id ASC, deployment_id ASC)';
             $ok = $db->exec($sql) !== false;
         }
@@ -118,8 +119,8 @@ function init_db($db)
         if ($ok) {
             $sql = "ALTER TABLE {$prefix}" . DataConnector\DataConnector::NONCE_TABLE_NAME . ' ' .
                 "ADD CONSTRAINT {$prefix}" . DataConnector\DataConnector::NONCE_TABLE_NAME . '_' .
-                DataConnector\DataConnector::CONSUMER_TABLE_NAME . '_FK1 FOREIGN KEY (consumer_pk) ' .
-                "REFERENCES {$prefix}" . DataConnector\DataConnector::CONSUMER_TABLE_NAME . ' (consumer_pk)';
+                DataConnector\DataConnector::PLATFORM_TABLE_NAME . '_FK1 FOREIGN KEY (consumer_pk) ' .
+                "REFERENCES {$prefix}" . DataConnector\DataConnector::PLATFORM_TABLE_NAME . ' (consumer_pk)';
             $ok = $db->exec($sql) !== false;
         }
     }
@@ -138,8 +139,8 @@ function init_db($db)
         if ($ok) {
             $sql = "ALTER TABLE {$prefix}" . DataConnector\DataConnector::ACCESS_TOKEN_TABLE_NAME . ' ' .
                 "ADD CONSTRAINT {$prefix}" . DataConnector\DataConnector::ACCESS_TOKEN_TABLE_NAME . '_' .
-                DataConnector\DataConnector::CONSUMER_TABLE_NAME . '_FK1 FOREIGN KEY (consumer_pk) ' .
-                "REFERENCES {$prefix}" . DataConnector\DataConnector::CONSUMER_TABLE_NAME . ' (consumer_pk)';
+                DataConnector\DataConnector::PLATFORM_TABLE_NAME . '_FK1 FOREIGN KEY (consumer_pk) ' .
+                "REFERENCES {$prefix}" . DataConnector\DataConnector::PLATFORM_TABLE_NAME . ' (consumer_pk)';
             $ok = $db->exec($sql) !== false;
         }
     }
@@ -160,8 +161,8 @@ function init_db($db)
         if ($ok) {
             $sql = "ALTER TABLE {$prefix}" . DataConnector\DataConnector::CONTEXT_TABLE_NAME . ' ' .
                 "ADD CONSTRAINT {$prefix}" . DataConnector\DataConnector::CONTEXT_TABLE_NAME . '_' .
-                DataConnector\DataConnector::CONSUMER_TABLE_NAME . '_FK1 FOREIGN KEY (consumer_pk) ' .
-                "REFERENCES {$prefix}" . DataConnector\DataConnector::CONSUMER_TABLE_NAME . ' (consumer_pk)';
+                DataConnector\DataConnector::PLATFORM_TABLE_NAME . '_FK1 FOREIGN KEY (consumer_pk) ' .
+                "REFERENCES {$prefix}" . DataConnector\DataConnector::PLATFORM_TABLE_NAME . ' (consumer_pk)';
             $ok = $db->exec($sql) !== false;
         }
         if ($ok) {
@@ -190,8 +191,8 @@ function init_db($db)
         if ($ok) {
             $sql = "ALTER TABLE {$prefix}" . DataConnector\DataConnector::RESOURCE_LINK_TABLE_NAME . ' ' .
                 "ADD CONSTRAINT {$prefix}" . DataConnector\DataConnector::RESOURCE_LINK_TABLE_NAME . '_' .
-                DataConnector\DataConnector::CONSUMER_TABLE_NAME . '_FK1 FOREIGN KEY (consumer_pk) ' .
-                "REFERENCES {$prefix}" . DataConnector\DataConnector::CONSUMER_TABLE_NAME . ' (consumer_pk)';
+                DataConnector\DataConnector::PLATFORM_TABLE_NAME . '_FK1 FOREIGN KEY (consumer_pk) ' .
+                "REFERENCES {$prefix}" . DataConnector\DataConnector::PLATFORM_TABLE_NAME . ' (consumer_pk)';
             $ok = $db->exec($sql) !== false;
         }
         if ($ok) {
