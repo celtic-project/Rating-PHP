@@ -272,51 +272,6 @@ function init_db($db)
             $ok = $db->exec($sql) !== false;
         }
     }
-    if ($ok && !tableExists($db, "{$prefix}item")) {
-// Adjust for different syntax of autoincrement columns
-        $sql = "CREATE TABLE {$prefix}item (" .
-            "item_pk int(11) NOT NULL AUTO_INCREMENT," .
-            'resource_link_pk int(11) NOT NULL, ' .
-            'item_title varchar(200) NOT NULL, ' .
-            'item_text text, ' .
-            'item_url varchar(200) DEFAULT NULL, ' .
-            'max_rating int(2) NOT NULL DEFAULT \'5\', ' .
-            'step int(1) NOT NULL DEFAULT \'1\', ' .
-            'visible tinyint(1) NOT NULL DEFAULT \'0\', ' .
-            'sequence int(3) NOT NULL DEFAULT \'0\', ' .
-            'created datetime NOT NULL, ' .
-            'updated datetime NOT NULL, ' .
-            'PRIMARY KEY (item_pk)' .
-            ') ENGINE=InnoDB DEFAULT CHARSET=utf8';
-        $ok = $db->exec($sql) !== false;
-        if ($ok) {
-            $sql = "ALTER TABLE {$prefix}item " .
-                "ADD CONSTRAINT {$prefix}item_" .
-                DataConnector\DataConnector::RESOURCE_LINK_TABLE_NAME . '_FK1 FOREIGN KEY (resource_link_pk) ' .
-                "REFERENCES {$prefix}" . DataConnector\DataConnector::RESOURCE_LINK_TABLE_NAME . ' (resource_link_pk) ' .
-                'ON UPDATE CASCADE ' .
-                'ON DELETE CASCADE';
-            $ok = $db->exec($sql) !== false;
-        }
-    }
-
-    if ($ok && !tableExists($db, "{$prefix}rating")) {
-        $sql = "CREATE TABLE {$prefix}rating (" .
-            'item_pk int(11) NOT NULL, ' .
-            'user_pk int(11) NOT NULL, ' .
-            'rating decimal(10,2) NOT NULL, ' .
-            'PRIMARY KEY (item_pk, user_pk)' .
-            ') ENGINE=InnoDB DEFAULT CHARSET=utf8';
-        $ok = $db->exec($sql) !== false;
-        if ($ok) {
-            $sql = "ALTER TABLE {$prefix}rating " .
-                "ADD CONSTRAINT {$prefix}rating_item_FK1 FOREIGN KEY (item_pk) " .
-                "REFERENCES {$prefix}item (item_pk) " .
-                'ON UPDATE CASCADE ' .
-                'ON DELETE CASCADE';
-            $ok = $db->exec($sql) !== false;
-        }
-    }
 
     return $ok;
 }
