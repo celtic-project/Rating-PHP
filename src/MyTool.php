@@ -66,7 +66,7 @@ class MyTool extends LTI\Tool
             $_SESSION['user_resource_pk'] = $this->userResult->getResourceLink()->getRecordId();
             $_SESSION['user_pk'] = $this->userResult->getRecordId();
 			$_SESSION['ltiUserId'] = $this->userResult->ltiUserId;
-//            $_SESSION['isStudent'] = $this->userResult->isLearner();
+            $_SESSION['isStudent'] = $this->userResult->isLearner();
 // The default index.php file will try to get the user information from the memberships based on $_SESSION['ltiUserId'].
 // Alternatively, you can set session values here.
 /* 			$_SESSION['user']['fullname'] = $this->userResult->fullname . " (here)";
