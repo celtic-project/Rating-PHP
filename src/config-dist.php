@@ -22,6 +22,19 @@ Util::$logLevel = LogLevel::Error;
 define('REQUEST_URI_PREFIX', '');
 
 ###
+###  App specific settings
+###
+define('TOOL_ID', 'lti13');
+define('SESSION_NAME', 'lti13');
+define('APP_NAME', 'Basic LTI 1.3');
+define('APP_VERSION', '0.1.0');
+define('VENDOR_CODE', 'kjt');
+define('VENDOR_NAME', 'Kyle J Tuck');
+define('VENDOR_DESCRIPTION', 'Independent developer');
+define('VENDOR_URL', 'https://github.com/kylejtuck');
+define('VENDOR_EMAIL', 'kylejtuck@gmail.com');
+
+###
 ###  Database connection settings
 ###
 define('DB_NAME', '');  // e.g. 'mysql:dbname=MyDb;host=localhost' or 'sqlite:php-rating.sqlitedb'

@@ -9,13 +9,13 @@ use ceLTIc\LTI\DataConnector;
  * @copyright  SPV Software Products
  * @license  http://www.gnu.org/licenses/gpl.html GNU General Public License, version 3
  */
-require_once('rating_tp.php');
+require_once('MyTool.php');
 
 // Initialise session and database
 $db = null;
 if (init($db)) {
     $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
-    $tool = new RatingTool($dataConnector);
+    $tool = new MyTool($dataConnector);
     $tool->doRegistration();
     $ok = $tool->ok;
     $message = $tool->reason;

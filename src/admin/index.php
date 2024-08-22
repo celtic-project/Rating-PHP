@@ -205,7 +205,7 @@ $page = <<< EOD
 <meta http-equiv="content-language" content="EN" />
 <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 <title>{$here(APP_NAME)}: Manage platforms</title>
-<link href="../css/rating.css?v={$here(APP_VERSION)}" media="screen" rel="stylesheet" type="text/css" />
+<link href="../css/basic-lti.css?v={$here(APP_VERSION)}" media="screen" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
 //<![CDATA[
 var numSelected = 0;

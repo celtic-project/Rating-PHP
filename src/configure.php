@@ -31,22 +31,22 @@ if (!isset($_GET['json'])) {
     http://www.imsglobal.org/xsd/imslticm_v1p0 http://www.imsglobal.org/xsd/lti/ltiv1p0/imslticm_v1p0.xsd
     http://www.imsglobal.org/xsd/imslticp_v1p0 http://www.imsglobal.org/xsd/lti/ltiv1p0/imslticp_v1p0.xsd">
   <blti:title>{$here(APP_NAME)}</blti:title>
-  <blti:description>Access to {$here(APP_NAME)} using LTI</blti:description>
+  <blti:description>{$here(APP_NAME)} LTI App</blti:description>
   <blti:icon>{$url}images/icon16.png</blti:icon>
   <blti:launch_url>{$url}connect.php</blti:launch_url>
   <blti:extensions platform="canvas.instructure.com">
-    <lticm:property name="tool_id">rating</lticm:property>
+    <lticm:property name="tool_id">{$here(TOOL_ID)}</lticm:property>
     <lticm:property name="privacy_level">public</lticm:property>
     <lticm:property name="domain">{$domain}</lticm:property>
     <lticm:property name="oauth_compliant">true</lticm:property>
   </blti:extensions>
   <blti:vendor>
-    <lticp:code>spvsp</lticp:code>
-    <lticp:name>SPV Software Products</lticp:name>
-    <lticp:description>Provider of open source educational tools.</lticp:description>
-    <lticp:url>http://www.spvsoftwareproducts.com/</lticp:url>
+    <lticp:code>{$here(VENDOR_CODE)}</lticp:code>
+    <lticp:name>{$here(VENDOR_NAME)}</lticp:name>
+    <lticp:description>{$here(VENDOR_DESCRIPTION)}</lticp:description>
+    <lticp:url>{$here(VENDOR_URL)}</lticp:url>
     <lticp:contact>
-      <lticp:email>stephen@spvsoftwareproducts.com</lticp:email>
+      <lticp:email>{$here(VENDOR_EMAIL)}</lticp:email>
     </lticp:contact>
   </blti:vendor>
 </cartridge_basiclti_link>
@@ -65,14 +65,12 @@ EOD;
   "oidc_initiation_url": "{$url}connect.php",
   "target_link_uri": "{$url}connect.php",
   "scopes": [
-    "{$here(LTI\Service\LineItem::$SCOPE)}",
-    "{$here(LTI\Service\Score::$SCOPE)}",
     "{$here(LTI\Service\Membership::$SCOPE)}"
   ],
   "extensions": [
     {
       "domain": "{$domain}",
-      "tool_id": "rating",
+      "tool_id": "{$here(TOOL_ID)}",
       "platform": "canvas.instructure.com",
       "privacy_level": "public",
       "settings": {
@@ -80,8 +78,8 @@ EOD;
         "icon_url": "{$url}icon16.png",
         "placements": [
           {
-            "placement": "assignment_selection",
-            "message_type": "LtiDeepLinkingRequest"
+            "placement": "course_navigation",
+            "message_type": "LtiResourceLinkRequest"
           }
         ]
       }
@@ -89,7 +87,8 @@ EOD;
   ],
   "public_jwk_url": "{$url}jwks.php",
   "custom_fields": {
-    "canvas_course_id": "$Canvas.course.id"
+    "user_username": "\$User.username",
+    "canvas_course_id": "\$Canvas.course.id"
   }
 }
 EOD;
