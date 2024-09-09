@@ -55,6 +55,13 @@ if ($ok) {
 	}
 	$page .= "<h2>User Details</h2>\n";
  	$page .= "<pre>\n" . json_encode($userResult, JSON_PRETTY_PRINT) . "</pre>\n";
+
+	$otherDetails = "<h2>Other Details</h2>\n";
+	$rlSettings = $resourceLink->getSettings();
+	foreach ($rlSettings as $setting => $val) {
+		$otherDetails .= "<p>" . $setting . ": " . $val . "</p>\n";
+	}
+	$page .= $otherDetails;
 	$page .= $membership;
 } else {
 	$page .= <<< EOD

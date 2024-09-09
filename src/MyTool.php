@@ -253,13 +253,17 @@ EOD;
     public function doRegistration(): void
     {
         $platformConfig = $this->getPlatformConfiguration();
-//file_put_contents('myoutput.txt', json_encode($platformConfig, JSON_PRETTY_PRINT), FILE_APPEND);
         if ($this->ok) {
             $toolConfig = $this->getConfiguration($platformConfig);
-			$toolConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['messages'][] = array('type'=>'LtiResourceLinkRequest', 'label'=>APP_NAME, 'placements'=>['course_navigation']);
-//file_put_contents('myoutput.txt', json_encode($toolConfig, JSON_PRETTY_PRINT), FILE_APPEND);
+	    $toolConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['messages'][] = array(
+                'type'=>'LtiResourceLinkRequest',
+                'label'=>APP_NAME,
+                'placements'=>['course_navigation']);
+	    $custom = new \stdClass();
+	    foreach (CUSTOM_FIELDS as $field => $val)
+                $custom->{$field} = $val;
+            $toolConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['custom_parameters'] = $custom;
             $registrationConfig = $this->sendRegistration($platformConfig, $toolConfig);
-//file_put_contents('myoutput.txt', json_encode($registrationConfig, JSON_PRETTY_PRINT), FILE_APPEND);
             if ($this->ok) {
                 $this->getPlatformToRegister($platformConfig, $registrationConfig, false);
                 if (defined('AUTO_ENABLE') && AUTO_ENABLE) {

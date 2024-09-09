@@ -17,8 +17,11 @@ $domain = parse_url($url, PHP_URL_HOST);
 $here = function($val) {
     return $val;
 };
+$custom = "";
 
 if (!isset($_GET['json'])) {
+    foreach (CUSTOM_FIELDS as $field => $val)
+        $custom .= '    <lticm:property name="' . $field . '">' . $val . "</lticm:property>\n";
     $xml = <<< EOD
 <?xml version="1.0" encoding="UTF-8"?>
 <cartridge_basiclti_link xmlns="http://www.imsglobal.org/xsd/imslticc_v1p0"
@@ -39,6 +42,7 @@ if (!isset($_GET['json'])) {
     <lticm:property name="privacy_level">public</lticm:property>
     <lticm:property name="domain">{$domain}</lticm:property>
     <lticm:property name="oauth_compliant">true</lticm:property>
+{$custom}
   </blti:extensions>
   <blti:vendor>
     <lticp:code>{$here(VENDOR_CODE)}</lticp:code>
@@ -56,7 +60,9 @@ EOD;
 
     echo $xml;
 } else {
-
+    foreach (CUSTOM_FIELDS as $field => $val)
+        $custom .= '    "' . $field . '": "' . $val . "\",\n";
+    $custom = rtrim($custom, ",\n");
     $json = <<< EOD
 {
   "title": "{$here(APP_NAME)}",
@@ -87,8 +93,7 @@ EOD;
   ],
   "public_jwk_url": "{$url}jwks.php",
   "custom_fields": {
-    "user_username": "\$User.username",
-    "canvas_course_id": "\$Canvas.course.id"
+{$custom}
   }
 }
 EOD;

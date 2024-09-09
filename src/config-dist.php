@@ -33,6 +33,10 @@ define('VENDOR_NAME', 'Kyle J Tuck');
 define('VENDOR_DESCRIPTION', 'Independent developer');
 define('VENDOR_URL', 'https://github.com/kylejtuck');
 define('VENDOR_EMAIL', 'kylejtuck@gmail.com');
+define('CUSTOM_FIELDS', array(
+#	'COURSE_NUMBER'=>"\$Canvas.course.id",
+#	'COURSE_SIS_ID'=>"\$Canvas.course.sisSourceId"
+));
 
 ###
 ###  Database connection settings
