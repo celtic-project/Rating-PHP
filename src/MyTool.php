@@ -16,7 +16,13 @@ require_once('lib.php');
 
 class MyTool extends LTI\Tool
 {
-
+	// ceLTIc Message class does not include/filters out some message fields (such as placements, roles, icon_uri, custom_parameters)
+	// and Canvas-specific fiels (https://canvas.instructure.com/lti/course_navigation/default_enabled, https://canvas.instructure.com/lti/visibility)
+	private $extraMessages = array();
+	
+	// The tool's default privacy level, (determines the PII fields the tool is sent.) defaults to "anonymous"
+	private $privacyLevel = "public"; // Canvas: "public" | "name_only" | "email_only" | "anonymous"
+	
     function __construct($dataConnector)
     {
         parent::__construct($dataConnector);
@@ -25,17 +31,26 @@ class MyTool extends LTI\Tool
 
         $this->baseUrl = getAppUrl();
         $this->vendor = new Profile\Item(VENDOR_CODE, VENDOR_NAME, VENDOR_DESCRIPTION, VENDOR_URL);
-        $this->product = new Profile\Item('d751f24f-140e-470f-944c-2d92b114db40', APP_NAME,
-            'Sample LTI tool that displays information.', 'https://github.com/kylejtuck/Basic-LTI-PHP/', APP_VERSION);
+        $this->product = new Profile\Item(TOOL_UUID, APP_NAME, APP_DESCRIPTION, APP_URL, APP_VERSION);
 
-        $requiredMessages = array(new Profile\Message('basic-lti-launch-request', 'connect.php', array('User.id', 'Membership.role')));
-        $optionalMessages = array(new Profile\Message('ContentItemSelectionRequest', 'connect.php',
-                array('User.id', 'Membership.role')),
-            new Profile\Message('DashboardRequest', 'connect.php', array('User.id'))
-        );
+        $requiredMessages = array(new Profile\Message('basic-lti-launch-request', 'connect.php', array('User.id', 'Membership.role'), CUSTOM_FIELDS));
+		$optionalMessages = array();
+		
+		$extraMessage = array(
+			'type'=>'LtiResourceLinkRequest',
+			'label'=>APP_NAME,
+			'placements'=>['course_navigation'],
+			'icon_uri'=>TOOL_BASE_URL.'images/icon50.png',
+			'https://canvas.instructure.com/lti/course_navigation/default_enabled'=>!DEFAULT_DISABLED
+		);
+		if (INSTRUCTOR_ONLY) {
+			$extraMessage['roles'] = ['http://purl.imsglobal.org/vocab/lis/v2/institution/person#Instructor'];
+			$extraMessage['https://canvas.instructure.com/lti/visibility'] = "admins";
+		}
+		$this->extraMessages[] = $extraMessage;
 
         $this->resourceHandlers[] = new Profile\ResourceHandler(
-            new Profile\Item('basic-lti', APP_NAME, 'Sample LTI tool that displays information.'),
+            new Profile\Item(TOOL_ID, APP_NAME, APP_DESCRIPTION),
             'images/icon50.png', $requiredMessages, $optionalMessages);
 
         $this->requiredServices[] = new Profile\ServiceDefinition(array('application/vnd.ims.lti.v2.toolproxy+json'), array('POST'));
@@ -93,7 +108,7 @@ class MyTool extends LTI\Tool
         global $db;
 
         $title = APP_NAME;
-        $appUrl = 'http://www.spvsoftwareproducts.com/php/rating/';
+        $appUrl = TOOL_BASE_URL;
         $iconUrl = getAppUrl() . 'images/icon50.png';
         if (empty($this->context)) {
             $html = <<< EOD
@@ -148,6 +163,7 @@ EOD;
             }
         }
         $appName = APP_NAME;
+		$disabledMsg = DEFAULT_DISABLED?"<p>The navigation item is disabled by default. Once you have registered the app, you will need to install it, and instructors will need to add it to their course navigation.</p>":"";
         $html = <<< EOD
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
@@ -202,6 +218,7 @@ EOD;
   <p>
     This page allows you to perform a dynamic registration with an LTI 1.3 platform.
   </p>
+{$disabledMsg}
 
   <p id="id_continue" class="aligncentre">
     <button type="button" onclick="return doRegister();">Continue</button>
@@ -255,14 +272,8 @@ EOD;
         $platformConfig = $this->getPlatformConfiguration();
         if ($this->ok) {
             $toolConfig = $this->getConfiguration($platformConfig);
-	    $toolConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['messages'][] = array(
-                'type'=>'LtiResourceLinkRequest',
-                'label'=>APP_NAME,
-                'placements'=>['course_navigation']);
-	    $custom = new \stdClass();
-	    foreach (CUSTOM_FIELDS as $field => $val)
-                $custom->{$field} = $val;
-            $toolConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['custom_parameters'] = $custom;
+			$toolConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['messages'] = array_merge($toolConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['messages'], $this->extraMessages);
+			$toolConfig['https://purl.imsglobal.org/spec/lti-tool-configuration']['https://canvas.instructure.com/lti/privacy_level'] = $this->privacyLevel;
             $registrationConfig = $this->sendRegistration($platformConfig, $toolConfig);
             if ($this->ok) {
                 $this->getPlatformToRegister($platformConfig, $registrationConfig, false);

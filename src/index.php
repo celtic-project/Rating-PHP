@@ -1,6 +1,7 @@
 <?php
 
 use ceLTIc\LTI;
+use ceLTIc\LTI\Platform;
 use ceLTIc\LTI\DataConnector;
 use ceLTIc\LTI\ResourceLink;
 use ceLTIc\LTI\UserResult;
@@ -19,8 +20,16 @@ $db = null;
 $ok = init($db, true);
 // Initialise parameters
 $dataConnector = DataConnector\DataConnector::getDataConnector($db, DB_TABLENAME_PREFIX);
+$platform = Platform::fromRecordId($_SESSION['consumer_pk'], $dataConnector);
+$platformCheck = new Platform($dataConnector);
+$platformCheck->platformId = $platform->platformId;
+$platformCheck->clientId = $platform->clientId;
+$platformCheck->deploymentId = null;
+if ($dataConnector->loadPlatform($platformCheck))
+	$platform = $platformCheck;
 $resourceLink = ResourceLink::fromRecordId($_SESSION['resource_pk'], $dataConnector);
-$userResult = UserResult::fromResourceLink($resourceLink, $_SESSION['ltiUserId']);
+$userResourceLink = ResourceLink::fromRecordId($_SESSION['user_resource_pk'], $dataConnector);
+$userResult = UserResult::fromResourceLink($userResourceLink, $_SESSION['ltiUserId']);
 
 $showVal = function($val) {
     return $val;
@@ -39,7 +48,7 @@ EOD;
 
 
 if ($ok) {
-	$membership = "<h2>Memberships Details for Course</h2>\n";
+	$membership = "<h2>Memberships Details for " . $resourceLink->title . "</h2>\n";
 	if ($resourceLink->hasMembershipsService()) {
  		$membership .= "<p>Resource Link has <strong>memberships</strong> service.</p>\n";
 		$members = $resourceLink->getMemberships(true);
@@ -47,7 +56,6 @@ if ($ok) {
 		$membership .= "<pre>";
 		foreach ($members as $member) {
 			if ($member->ltiUserId == $_SESSION['ltiUserId']) $userResult = $member;
-//			$membership .= json_encode($member, JSON_PRETTY_PRINT);
 			$membership .= $member->lastname . ", " . $member->firstname . ": ";
 			$membership .= $member->isLearner()?"Student\n":"Instructor\n";
 		}
@@ -55,10 +63,13 @@ if ($ok) {
 	}
 	$page .= "<h2>User Details</h2>\n";
  	$page .= "<pre>\n" . json_encode($userResult, JSON_PRETTY_PRINT) . "</pre>\n";
-
-	$otherDetails = "<h2>Other Details</h2>\n";
+	$otherDetails = "<h2>Custom Settings</h2>\n<h3>Resource Link Settings</h3>\n";
 	$rlSettings = $resourceLink->getSettings();
 	foreach ($rlSettings as $setting => $val) {
+		$otherDetails .= "<p>" . $setting . ": " . $val . "</p>\n";
+	}
+	$otherDetails .= "<h3>Platform Settings</h3>\n";
+	foreach ($platform->getSettings() as $setting => $val) {
 		$otherDetails .= "<p>" . $setting . ": " . $val . "</p>\n";
 	}
 	$page .= $otherDetails;

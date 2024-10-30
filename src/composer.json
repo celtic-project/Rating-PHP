@@ -1,16 +1,20 @@
 {
-  "name": "celtic/rating",
-  "version": "5.0.0",
+  "name": "kylejtuck/Basic-LTI-PHP",
+  "version": "1.0.1",
   "type": "project",
   "license": "GPL-3.0-or-later",
   "authors": [
+    {
+      "name": "Kyle Tuck",
+      "email": "kylejtuck@gmail.com"
+    },
     {
       "name": "Stephen P Vickers",
       "email": "stephen@spvsoftwareproducts.com"
     }
   ],
   "support": {
-    "docs": "https://github.com/celtic-project/Rating-PHP/wiki"
+    "docs": "https://github.com/kylejtuck/Basic-LTI-PHP/wiki"
   },
   "require": {
     "php": ">=8.1",
