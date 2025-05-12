@@ -93,7 +93,17 @@ if ($ok) {
                 $updatePlatform->accessTokenUrl = null;
             }
             if (!empty($_POST['publickey'])) {
-                $updatePlatform->rsaKey = $_POST['publickey'];
+                $res = openssl_pkey_get_public($_POST['publickey']);
+                if ($res === false) {
+                    $_SESSION['error_message'] = 'Invalid public key - value has not been changed.';
+                } else {
+                    $details = openssl_pkey_get_details($res);
+                    if (($details === false) || !isset($details['rsa'])) {
+                        $_SESSION['error_message'] = 'The public key must have a type of \'RSA\' - value has not been changed.';
+                    } else {
+                        $updatePlatform->rsaKey = $_POST['publickey'];
+                    }
+                }
             } else {
                 $updatePlatform->rsaKey = null;
             }
