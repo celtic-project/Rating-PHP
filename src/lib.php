@@ -2,7 +2,6 @@
 
 use ceLTIc\LTI;
 use ceLTIc\LTI\DataConnector;
-use ceLTIc\LTI\ApiHook\ApiHook;
 use ceLTIc\LTI\OAuth;
 use ceLTIc\LTI\Enum\ServiceAction;
 
@@ -21,9 +20,11 @@ define('APP_NAME', 'Rating');
 define('APP_VERSION', '5.0.0');
 define('SESSION_NAME', 'php-rating');
 
-LTI\ResourceLink::registerApiHook(ApiHook::$MEMBERSHIPS_SERVICE_HOOK, 'moodle', 'ceLTIc\LTI\ApiHook\moodle\MoodleApiResourceLink');
-LTI\Tool::registerApiHook(ApiHook::$USER_ID_HOOK, 'canvas', 'ceLTIc\LTI\ApiHook\canvas\CanvasApiTool');
-LTI\ResourceLink::registerApiHook(ApiHook::$MEMBERSHIPS_SERVICE_HOOK, 'canvas', 'ceLTIc\LTI\ApiHook\canvas\CanvasApiResourceLink');
+LTI\ResourceLink::registerApiHook(LTI\ResourceLink::$MEMBERSHIPS_SERVICE_HOOK, 'moodle',
+    'ceLTIc\LTI\ApiHook\moodle\MoodleApiResourceLink');
+LTI\Tool::registerApiHook(LTI\Tool::$USER_ID_HOOK, 'canvas', 'ceLTIc\LTI\ApiHook\canvas\CanvasApiTool');
+LTI\ResourceLink::registerApiHook(LTI\ResourceLink::$MEMBERSHIPS_SERVICE_HOOK, 'canvas',
+    'ceLTIc\LTI\ApiHook\canvas\CanvasApiResourceLink');
 
 ###
 ###  Initialise application session and database connection
@@ -739,6 +740,17 @@ function pageFooter()
     </footer>
 
 EOD;
+}
+
+function ratingHtmlEntities($string, $flags = ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401, $encoding = null, $double_encode = true)
+{
+    if (is_int($string) || is_float($string)) {
+        return strval($string);
+    } else if (!is_string($string)) {
+        return '';
+    } else {
+        return htmlentities($string, $flags, $encoding, $double_encode);
+    }
 }
 
 /**

@@ -384,17 +384,17 @@ EOD;
             $lti2 = ' disabled="disabled"';
         }
     }
-    $name = htmlentities($updatePlatform->name);
-    $key = htmlentities($updatePlatform->getKey());
-    $platformId = htmlentities($updatePlatform->platformId);
-    $clientId = htmlentities($updatePlatform->clientId);
-    $deploymentId = htmlentities($updatePlatform->deploymentId);
-    $authorizationServerId = htmlentities($updatePlatform->authorizationServerId);
-    $authenticationUrl = htmlentities($updatePlatform->authenticationUrl);
-    $accessTokenUrl = htmlentities($updatePlatform->accessTokenUrl);
-    $publicKey = htmlentities($updatePlatform->rsaKey);
-    $jku = htmlentities($updatePlatform->jku);
-    $secret = htmlentities($updatePlatform->secret);
+    $name = ratingHtmlEntities($updatePlatform->name);
+    $key = ratingHtmlEntities($updatePlatform->getKey());
+    $platformId = ratingHtmlEntities($updatePlatform->platformId);
+    $clientId = ratingHtmlEntities($updatePlatform->clientId);
+    $deploymentId = ratingHtmlEntities($updatePlatform->deploymentId);
+    $authorizationServerId = ratingHtmlEntities($updatePlatform->authorizationServerId);
+    $authenticationUrl = ratingHtmlEntities($updatePlatform->authenticationUrl);
+    $accessTokenUrl = ratingHtmlEntities($updatePlatform->accessTokenUrl);
+    $publicKey = ratingHtmlEntities($updatePlatform->rsaKey);
+    $jku = ratingHtmlEntities($updatePlatform->jku);
+    $secret = ratingHtmlEntities($updatePlatform->secret);
     if ($updatePlatform->enabled) {
         $enabled = ' checked="checked"';
     } else {

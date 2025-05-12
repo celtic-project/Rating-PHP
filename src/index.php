@@ -371,9 +371,9 @@ if ($ok && !$_SESSION['isStudent'] && ($_SESSION['isContentItem'] || ($_SESSION[
     } else {
         $mode = 'Add new';
     }
-    $title = htmlentities($updateItem->item_title);
-    $url = htmlentities($updateItem->item_url);
-    $text = htmlentities($updateItem->item_text);
+    $title = ratingHtmlEntities($updateItem->item_title);
+    $url = ratingHtmlEntities($updateItem->item_url);
+    $text = ratingHtmlEntities($updateItem->item_text);
     if ($updateItem->visible) {
         $checked = ' checked="checked"';
     } else {
