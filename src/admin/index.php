@@ -453,7 +453,9 @@ EOD;
   <span id="id_authorizationserverid"><span class="label">Authorization server ID:</span>&nbsp;<input name="authorizationserverid" type="text" size="75" maxlength="255" value="{$authorizationServerId}" /><br /></span>
   <span id="id_authenticationurl"><span class="label">Authentication request URL:</span>&nbsp;<input name="authenticationurl" type="text" size="75" maxlength="255" value="{$authenticationUrl}" /><br /></span>
   <span id="id_accesstokenurl"><span class="label">Access token URL:</span>&nbsp;<input name="accesstokenurl" type="text" size="75" maxlength="255" value="{$accessTokenUrl}" /><br /></span>
-  <span id="id_publickey"><span class="label">Public key:</span>&nbsp;<textarea name="publickey" rows="9" cols="65">{$publicKey}</textarea><br /></span>
+  <span id="id_publickey"><span class="label">Public key:</span>&nbsp;<textarea name="publickey" rows="9" cols="65" placeholder="-----BEGIN PUBLIC KEY-----
+...
+-----END PUBLIC KEY-----">{$publicKey}</textarea><br /></span>
   <span id="id_jku"><span class="label">JSON webkey URL (jku):</span>&nbsp;<input name="jku" type="text" size="75" maxlength="255" value="{$jku}" /><br /></span>
   <br />
   <span class="label">Enabled?</span>&nbsp;<input name="enabled" type="checkbox" value="1"{$enabled} /><br />
